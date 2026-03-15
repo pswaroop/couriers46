@@ -87,16 +87,26 @@ try {
 }
 
 const app = express();
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'https://couriers46.vercel.app',
+  'https://couriers.foursix46.com',  // add your custom domain too
+];
 
-// ✅ Explicit CORS configuration
-app.use(
-  cors({
-    origin: "http://localhost:8080",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // ✅ PASTE THIS before app.use(express.json(...))
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
