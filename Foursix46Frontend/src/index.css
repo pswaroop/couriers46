@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 205 82% 21%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 205 82% 21%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 205 82% 21%;
+
+    /* Foursix46 Brand Red */
+    --primary: 355 94% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Foursix46 Brand Blue */
+    --secondary: 205 82% 21%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 355 94% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 220 13% 91%;
+    --ring: 355 94% 53%;
+
+    --radius: 0.75rem;
+    
+    /* Custom brand tokens */
+    --brand-red: 355 94% 53%;
+    --brand-blue: 205 82% 21%;
+    --brand-blue-light: 205 70% 35%;
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(205 82% 21%), hsl(205 70% 35%));
+    --gradient-accent: linear-gradient(135deg, hsl(355 94% 53%), hsl(355 94% 63%));
+    
+    /* Shadows */
+    --shadow-elegant: 0 10px 40px -10px hsl(205 82% 21% / 0.2);
+    --shadow-card: 0 4px 20px -2px hsl(205 82% 21% / 0.1);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 205 82% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 205 82% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 205 82% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 355 94% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 205 70% 25%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 205 70% 20%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 355 94% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 205 70% 25%;
+    --input: 205 70% 20%;
+    --ring: 355 94% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  
+  input, textarea, select {
+    @apply rounded-xl;
+  }
+}
+
+@layer utilities {
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .perspective {
+    perspective: 1200px;
+  }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 25s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Chatbot double text responsive colors */
+@media (min-width: 1024px) {
+  .desktop-text-white {
+    fill: white !important;
+    stroke: white !important;
+  }
+  .desktop-text-white-fill {
+    fill: white !important;
+  }
+}
