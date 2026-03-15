@@ -674,6 +674,26 @@ app.post("/api/create-checkout-session", async (req, res) => {
  * @desc    Sets a custom 'admin' claim on a user.
  * @access  SECURE: Run this one time, then remove it.
  */
+// --- ONE-TIME ADMIN SETUP — DELETE AFTER USE ---
+app.post('/api/make-admin', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+    const user = await admin.auth().getUserByEmail(email);
+    await admin.auth().setCustomUserClaims(user.uid, { admin: true });
+
+    return res.status(200).json({ 
+      message: `Success! ${email} is now an admin.`,
+      uid: user.uid
+    });
+  } catch (error) {
+    console.error('make-admin error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+});
+// --- END ONE-TIME SETUP ---
+
 
 /**
  * @route   POST /api/drivers/:id/approve
