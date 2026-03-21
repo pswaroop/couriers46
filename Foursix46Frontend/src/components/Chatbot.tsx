@@ -40,15 +40,15 @@ const faqData: FAQCategory[] = [
     title: "General Info",
     questions: [
       {
-        question: "What is FourSix46® Couriers?",
+        question: "What is Route46 Couriers?",
         answer:
-          "FourSix46® Couriers is a UK-based same-day and express delivery service operated by FourSix46® Global Ltd, transporting goods across the UK mainland under the RHA Conditions of Carriage 2024.",
+          "Route46 Couriers is a UK-based same-day and express delivery service operated by Route46 Global Ltd, transporting goods across the UK mainland under the RHA Conditions of Carriage 2024.",
         keywords: [
           "who",
           "what",
           "about",
           "company",
-          "foursix46",
+          "route46",
           "courier",
           "service",
         ],
@@ -507,7 +507,7 @@ export const Chatbot = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Hello! 👋 Welcome to FourSix46® Support. Browse categories below or type your question.",
+      text: "Hello! 👋 Welcome to Route46 Support. Browse categories below or type your question.",
       sender: "bot",
       timestamp: new Date(),
     },

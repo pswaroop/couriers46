@@ -39,7 +39,7 @@ export const TestimonialsPage = () => {
   const testimonials = [
     {
       quote:
-        "FourSix46’s courier service is the best I’ve used! Fast delivery and real-time updates.",
+        "Route46’s courier service is the best I’ve used! Fast delivery and real-time updates.",
       name: "Neha, Manchester",
       role: "Small Business Owner",
       initial: "N",
@@ -48,7 +48,7 @@ export const TestimonialsPage = () => {
     },
     {
       quote:
-        "Flexible driving hours and great pay. FourSix46® really cares about its team.",
+        "Flexible driving hours and great pay. Route46 really cares about its team.",
       name: "Ali, Birmingham",
       role: "Driver",
       initial: "A",
@@ -195,15 +195,17 @@ export const TestimonialsPage = () => {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F5EB18]/75 border border-[#F5EB18]/100 mb-6">
             <div className="w-2 h-2 rounded-full bg-[#E53935]/100 animate-pulse"></div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#134467]">
-              Wall of Love
+              What Our Customers Say
             </span>
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[#48AEDD] mb-6 tracking-tight">
-            Trusted by the <span className="text-[#E53935]">Community</span>
+            Trusted by
+            <span className="text-[#E53935]"> Businesses and Individuals </span>
+            Across the UK
           </h1>
           <p className="text-[#134467]/80 max-w-xl mx-auto text-lg">
-            See what drivers, businesses, and individuals are saying about the
-            FourSix46® experience.
+            See what businesses, drivers, and individuals say about their
+            experience with Route46 Couriers.
           </p>
         </div>
 
@@ -278,8 +280,8 @@ export const TestimonialsPage = () => {
             </h2>
 
             <p className="text-[#134467]/80 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-              Join thousands of businesses and individuals who trust Foursix46®
-              for their logistics needs. Experience the difference today.
+              Join businesses and individuals across the UK who trust Route46
+              Couriers for reliable courier and delivery services.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -294,7 +296,7 @@ export const TestimonialsPage = () => {
                 onClick={() => navigate("/for-businesses")}
                 className="h-16 px-10 border-2 border-[#134467]/100 bg-transparent text-[#134467] hover:bg-[#134467]/100 text-lg font-bold rounded-full transition-all duration-300 hover:-translate-y-1"
               >
-                Join Okapi's Network <ArrowRight className="ml-2 w-5 h-5" />
+                Join Our Courier Network <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
           </div>

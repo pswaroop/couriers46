@@ -17,8 +17,11 @@
 // import { Navigation } from "@/components/Navigation";
 // import { Chatbot } from "@/components/Chatbot";
 // import ScrollToTop from "@/components/ScrollToTop";
+// import QuickQuoteThankYouPage from "./pages/QuickQuoteThankYouPage";
+// import BlogPostPage from "./pages/BlogPostPage";
+// import BlogsPage from "./pages/BlogsPage";
 
-// // --- Lazy load all page components for code splitting ---
+// // --- Lazy load all page components ---
 // const HomePage = lazy(() => import("@/pages/HomePage"));
 // const QuickQuotePage = lazy(() => import("@/pages/QuickQuotePage"));
 // const BecomeDriverPage = lazy(() => import("@/pages/BecomeDriverPage"));
@@ -31,9 +34,12 @@
 // const PayPage = lazy(() => import("@/pages/PayPage"));
 // const PaySuccessPage = lazy(() => import("@/pages/PaySuccessPage"));
 // const PayCancelPage = lazy(() => import("@/pages/PayCancelPage"));
-// const LocationServicePage = lazy(() => import("@/pages/LocationServicePage"));
 // const LocationsPage = lazy(() => import("@/pages/LocationsPage"));
 // const LocationDetailPage = lazy(() => import("@/pages/LocationDetailPage"));
+
+// // ✅ LocationServicePage — full-bleed layout, kept outside PublicLayout
+// const LocationServicePage = lazy(() => import("@/pages/LocationServicePage"));
+
 // const ContactPage = lazy(() => import("@/pages/ContactPage"));
 // const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
 // const TermsPage = lazy(() => import("@/pages/TermsPage"));
@@ -71,7 +77,6 @@
 // );
 
 // // --- Admin Error Fallback ---
-// // Shown when an admin page crashes (instead of a blank screen)
 // const AdminErrorFallback = ({ error }: { error: Error }) => (
 //   <div className="min-h-screen flex items-center justify-center bg-gray-100">
 //     <div className="bg-white rounded-xl shadow p-8 max-w-md w-full text-center">
@@ -92,8 +97,7 @@
 //   </div>
 // );
 
-// // --- Public Layout ---
-// // Wraps all public pages with Navigation sidebar
+// // --- Public Layout (with Navigation sidebar) ---
 // const PublicLayout = () => (
 //   <div className="min-h-screen">
 //     <Navigation />
@@ -103,9 +107,16 @@
 //   </div>
 // );
 
+// // --- Full Bleed Layout (Navigation only, no main padding) ---
+// // Used for pages with full-width hero sections that manage their own spacing
+// const FullBleedLayout = () => (
+//   <div className="min-h-screen">
+//     <Navigation />
+//     <Outlet />
+//   </div>
+// );
+
 // // --- Admin Layout ---
-// // Minimal wrapper for admin pages — no Navigation, clean background
-// // FIX: Without this, admin pages may render invisibly (no height/styles)
 // const AdminLayout = () => (
 //   <div className="min-h-screen bg-gray-100">
 //     <Outlet />
@@ -127,11 +138,7 @@
 //           <ScrollToTop />
 //           <Suspense fallback={<PageLoader />}>
 //             <Routes>
-//               {/* ---------------------------------------- */}
-//               {/* ADMIN ROUTES — Isolated layout, no Navigation */}
-//               {/* FIX: Wrapped in AdminLayout so pages have a visible shell */}
-//               {/* FIX: ErrorBoundary catches silent render crashes → no more blank pages */}
-//               {/* ---------------------------------------- */}
+//               {/* ── ADMIN ROUTES ─────────────────────────────────────── */}
 //               <Route
 //                 element={
 //                   <ErrorBoundary
@@ -150,16 +157,25 @@
 //                 />
 //               </Route>
 
-//               {/* ---------------------------------------- */}
-//               {/* PUBLIC ROUTES — Wrapped in PublicLayout */}
-//               {/* FIX: path="*" REMOVED from here (was intercepting admin routes) */}
-//               {/* ---------------------------------------- */}
+//               {/* ── LOCATION SERVICE PAGES (full-bleed, no main padding) ── */}
+//               {/* ✅ Must be BEFORE PublicLayout's locations/:slug route    */}
+//               {/* ✅ Uses FullBleedLayout so hero isn't offset by pt-20     */}
+//               <Route element={<FullBleedLayout />}>
+//                 <Route
+//                   path="locations/:locationSlug/:serviceSlug"
+//                   element={<LocationServicePage />}
+//                 />
+//               </Route>
+
+//               {/* ── PUBLIC ROUTES ────────────────────────────────────── */}
 //               <Route element={<PublicLayout />}>
 //                 <Route index element={<HomePage />} />
 //                 <Route path="quick-quote" element={<QuickQuotePage />} />
 //                 <Route path="become-driver" element={<BecomeDriverPage />} />
 //                 <Route path="for-businesses" element={<ForBusinessesPage />} />
 //                 <Route path="testimonials" element={<TestimonialsPageLazy />} />
+//                 <Route path="/blog" element={<BlogsPage />} />
+//                 <Route path="/blog/:slug" element={<BlogPostPage />} />
 //                 <Route path="services">
 //                   <Route index element={<ServicesPage />} />
 //                   <Route path=":slug" element={<ServiceDetailPage />} />
@@ -170,10 +186,6 @@
 //                 <Route
 //                   path="locations/:slug"
 //                   element={<LocationDetailPage />}
-//                 />
-//                 <Route
-//                   path="locations/:locationSlug/:serviceSlug"
-//                   element={<LocationServicePage />}
 //                 />
 //                 <Route path="about" element={<AboutPage />} />
 //                 <Route path="pay" element={<PayPage />} />
@@ -191,6 +203,11 @@
 //                 />
 //                 <Route path="rha-summary" element={<RHAPage />} />
 //                 <Route
+//                   path="/get-a-quote/thank-you"
+//                   element={<QuickQuoteThankYouPage />}
+//                 />
+
+//                 <Route
 //                   path="driver-thank-you"
 //                   element={<DriverThankYouPage />}
 //                 />
@@ -206,22 +223,17 @@
 //                   path="booking-thank-you"
 //                   element={<BookingThankYouPage />}
 //                 />
-//                 {/* FIX: Removed leading slash — paths inside layout routes must be relative */}
 //                 <Route
 //                   path="send-parcel"
 //                   element={<Navigate to="/quick-quote" replace />}
 //                 />
 //               </Route>
 
-//               {/* ---------------------------------------- */}
-//               {/* GLOBAL 404 — Must be OUTSIDE all layout routes */}
-//               {/* FIX: Moved here so it only fires when NO route matches at all */}
-//               {/* ---------------------------------------- */}
+//               {/* ── 404 ──────────────────────────────────────────────── */}
 //               <Route path="*" element={<NotFound />} />
 //             </Routes>
 //           </Suspense>
 
-//           {/* Chatbot — available on all public pages */}
 //           <Chatbot />
 //         </BrowserRouter>
 //       </HelmetProvider>
@@ -240,19 +252,22 @@ import {
   Route,
   Outlet,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, Component, ReactNode } from "react";
 import { HelmetProvider } from "react-helmet-async";
-import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
-// --- Eager load critical components ---
+// ── Always-on Global Components ───────────────────────────────────────────────
 import { Navigation } from "@/components/Navigation";
 import { Chatbot } from "@/components/Chatbot";
 import ScrollToTop from "@/components/ScrollToTop";
 
-// --- Lazy load all page components ---
+// ── Lazy Pages ────────────────────────────────────────────────────────────────
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const QuickQuotePage = lazy(() => import("@/pages/QuickQuotePage"));
+const QuickQuoteThankYouPage = lazy(
+  () => import("@/pages/QuickQuoteThankYouPage"),
+);
 const BecomeDriverPage = lazy(() => import("@/pages/BecomeDriverPage"));
 const ForBusinessesPage = lazy(() => import("@/pages/ForBusinessesPage"));
 const ServicesPage = lazy(() => import("@/pages/ServicesPage"));
@@ -265,10 +280,7 @@ const PaySuccessPage = lazy(() => import("@/pages/PaySuccessPage"));
 const PayCancelPage = lazy(() => import("@/pages/PayCancelPage"));
 const LocationsPage = lazy(() => import("@/pages/LocationsPage"));
 const LocationDetailPage = lazy(() => import("@/pages/LocationDetailPage"));
-
-// ✅ LocationServicePage — full-bleed layout, kept outside PublicLayout
 const LocationServicePage = lazy(() => import("@/pages/LocationServicePage"));
-
 const ContactPage = lazy(() => import("@/pages/ContactPage"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
@@ -286,8 +298,8 @@ const DriverThankYouPage = lazy(() => import("@/pages/DriverThankYouPage"));
 const ShipperThankYouPage = lazy(() => import("@/pages/ShipperThankYouPage"));
 const ContactThankYouPage = lazy(() => import("@/pages/ContactThankYouPage"));
 const BookingThankYouPage = lazy(() => import("@/pages/BookingThankYouPage"));
-
-// TestimonialsPage uses named export
+const BlogsPage = lazy(() => import("@/pages/BlogsPage"));
+const BlogPostPage = lazy(() => import("@/pages/BlogPostPage"));
 const TestimonialsPageLazy = lazy(async () => {
   const module = await import("@/pages/TestimonialsPage");
   return { default: module.TestimonialsPage };
@@ -295,63 +307,138 @@ const TestimonialsPageLazy = lazy(async () => {
 
 const queryClient = new QueryClient();
 
-// --- Global Loading Spinner ---
+// ── Page Loader (shown during lazy chunk download) ────────────────────────────
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="flex flex-col items-center gap-4">
-      <div className="w-16 h-16 border-4 border-[#48AEDD] border-t-transparent rounded-full animate-spin" />
-      <p className="text-[#134467] font-semibold">Loading...</p>
-    </div>
-  </div>
-);
-
-// --- Admin Error Fallback ---
-const AdminErrorFallback = ({ error }: { error: Error }) => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-100">
-    <div className="bg-white rounded-xl shadow p-8 max-w-md w-full text-center">
-      <h2 className="text-xl font-bold text-red-600 mb-2">Admin Page Error</h2>
-      <p className="text-gray-600 mb-4 text-sm">
-        The page failed to load. Check the browser console for details.
+  <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="flex flex-col items-center gap-5">
+      {/* Animated logo-coloured ring */}
+      <div className="relative w-16 h-16">
+        <div className="absolute inset-0 rounded-full border-4 border-[#134467]/10" />
+        <div className="absolute inset-0 rounded-full border-4 border-t-[#E53935] border-r-[#48AEDD] border-b-[#F5EB18] border-l-transparent animate-spin" />
+      </div>
+      <p className="text-[#134467] font-semibold text-sm tracking-wide">
+        Loading…
       </p>
-      <pre className="text-xs text-left bg-red-50 text-red-700 p-3 rounded overflow-auto mb-4">
-        {error?.message}
-      </pre>
-      <button
-        onClick={() => window.location.reload()}
-        className="px-4 py-2 bg-[#134467] text-white rounded hover:bg-[#0e3352] transition-colors text-sm"
-      >
-        Reload Page
-      </button>
     </div>
   </div>
 );
 
-// --- Public Layout (with Navigation sidebar) ---
+// ── Route Error Fallback (shown when a page component crashes) ────────────────
+const RouteErrorFallback = ({
+  error,
+  onReset,
+}: {
+  error: Error;
+  onReset: () => void;
+}) => (
+  <div className="min-h-screen flex items-center justify-center bg-white px-6">
+    <div className="max-w-md w-full text-center space-y-6">
+      {/* Accent line */}
+      <div className="w-full h-1 bg-gradient-to-r from-[#48AEDD] via-[#F5EB18] to-[#E53935] rounded-full" />
+      <div className="space-y-2">
+        <h1 className="text-4xl font-black text-[#E53935]">Oops!</h1>
+        <p className="text-[#134467] font-semibold text-lg">
+          Something went wrong loading this page.
+        </p>
+        <p className="text-slate-400 text-sm">
+          This is usually a temporary issue. Try refreshing or go back home.
+        </p>
+      </div>
+      {/* Error detail (dev-friendly) */}
+      {error?.message && (
+        <pre className="text-xs text-left bg-slate-50 border border-slate-200 text-slate-500 p-4 rounded-xl overflow-auto max-h-32">
+          {error.message}
+        </pre>
+      )}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <button
+          onClick={onReset}
+          className="px-6 py-3 bg-[#134467] text-white font-semibold rounded-xl hover:bg-[#0d2f4a] transition-colors text-sm"
+        >
+          Try Again
+        </button>
+        <button
+          onClick={() => (window.location.href = "/")}
+          className="px-6 py-3 border border-[#134467] text-[#134467] font-semibold rounded-xl hover:bg-[#134467]/5 transition-colors text-sm"
+        >
+          Go Home
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ── Class-based ErrorBoundary (required by React) ─────────────────────────────
+interface EBState {
+  hasError: boolean;
+  error: Error | null;
+}
+interface EBProps {
+  children: ReactNode;
+}
+
+class PageErrorBoundary extends Component<EBProps, EBState> {
+  constructor(props: EBProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error): EBState {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[PageErrorBoundary]", error, info);
+  }
+  reset = () => this.setState({ hasError: false, error: null });
+  render() {
+    if (this.state.hasError) {
+      return (
+        <RouteErrorFallback error={this.state.error!} onReset={this.reset} />
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ── Layouts ───────────────────────────────────────────────────────────────────
+
+// Standard public pages — Navigation sidebar + content offset
 const PublicLayout = () => (
-  <div className="min-h-screen">
-    <Navigation />
-    <main className="pt-20 pb-24 lg:pt-0 lg:pb-0 lg:mr-72">
-      <Outlet />
-    </main>
-  </div>
+  <PageErrorBoundary>
+    <div className="min-h-screen">
+      <Navigation />
+      <main className="pt-20 pb-24 lg:pt-0 lg:pb-0 lg:mr-72">
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
+      </main>
+    </div>
+  </PageErrorBoundary>
 );
 
-// --- Full Bleed Layout (Navigation only, no main padding) ---
-// Used for pages with full-width hero sections that manage their own spacing
+// Full-bleed pages — Navigation only, page controls its own spacing
 const FullBleedLayout = () => (
-  <div className="min-h-screen">
-    <Navigation />
-    <Outlet />
-  </div>
+  <PageErrorBoundary>
+    <div className="min-h-screen">
+      <Navigation />
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
+    </div>
+  </PageErrorBoundary>
 );
 
-// --- Admin Layout ---
+// Admin pages — plain bg, own error message
 const AdminLayout = () => (
-  <div className="min-h-screen bg-gray-100">
-    <Outlet />
-  </div>
+  <PageErrorBoundary>
+    <div className="min-h-screen bg-gray-100">
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
+    </div>
+  </PageErrorBoundary>
 );
 
+// ── App ───────────────────────────────────────────────────────────────────────
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -365,96 +452,104 @@ const App = () => (
           }}
         >
           <ScrollToTop />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* ── ADMIN ROUTES ─────────────────────────────────────── */}
+
+          <Routes>
+            {/* ── ADMIN ────────────────────────────────────────────────── */}
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            </Route>
+
+            {/* ── FULL-BLEED (must be before PublicLayout locations/:slug) */}
+            <Route element={<FullBleedLayout />}>
               <Route
-                element={
-                  <ErrorBoundary
-                    FallbackComponent={
-                      AdminErrorFallback as React.ComponentType<FallbackProps>
-                    }
-                  >
-                    <AdminLayout />
-                  </ErrorBoundary>
-                }
-              >
-                <Route path="/admin/login" element={<AdminLoginPage />} />
-                <Route
-                  path="/admin/dashboard"
-                  element={<AdminDashboardPage />}
-                />
+                path="locations/:locationSlug/:serviceSlug"
+                element={<LocationServicePage />}
+              />
+            </Route>
+
+            {/* ── PUBLIC ───────────────────────────────────────────────── */}
+            <Route element={<PublicLayout />}>
+              {/* Core */}
+              <Route index element={<HomePage />} />
+              <Route path="quick-quote" element={<QuickQuotePage />} />
+              <Route
+                path="/get-a-quote/thank-you"
+                element={<QuickQuoteThankYouPage />}
+              />
+              <Route path="become-driver" element={<BecomeDriverPage />} />
+              <Route path="for-businesses" element={<ForBusinessesPage />} />
+              <Route path="testimonials" element={<TestimonialsPageLazy />} />
+
+              {/* Blog */}
+              <Route path="/blog" element={<BlogsPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
+
+              {/* Services */}
+              <Route path="services">
+                <Route index element={<ServicesPage />} />
+                <Route path=":slug" element={<ServiceDetailPage />} />
               </Route>
 
-              {/* ── LOCATION SERVICE PAGES (full-bleed, no main padding) ── */}
-              {/* ✅ Must be BEFORE PublicLayout's locations/:slug route    */}
-              {/* ✅ Uses FullBleedLayout so hero isn't offset by pt-20     */}
-              <Route element={<FullBleedLayout />}>
-                <Route
-                  path="locations/:locationSlug/:serviceSlug"
-                  element={<LocationServicePage />}
-                />
-              </Route>
+              {/* Sectors */}
+              <Route path="sectors" element={<SectorsPage />} />
+              <Route path="sectors/:slug" element={<SectorDetailPage />} />
 
-              {/* ── PUBLIC ROUTES ────────────────────────────────────── */}
-              <Route element={<PublicLayout />}>
-                <Route index element={<HomePage />} />
-                <Route path="quick-quote" element={<QuickQuotePage />} />
-                <Route path="become-driver" element={<BecomeDriverPage />} />
-                <Route path="for-businesses" element={<ForBusinessesPage />} />
-                <Route path="testimonials" element={<TestimonialsPageLazy />} />
-                <Route path="services">
-                  <Route index element={<ServicesPage />} />
-                  <Route path=":slug" element={<ServiceDetailPage />} />
-                </Route>
-                <Route path="sectors" element={<SectorsPage />} />
-                <Route path="sectors/:slug" element={<SectorDetailPage />} />
-                <Route path="locations" element={<LocationsPage />} />
-                <Route
-                  path="locations/:slug"
-                  element={<LocationDetailPage />}
-                />
-                <Route path="about" element={<AboutPage />} />
-                <Route path="pay" element={<PayPage />} />
-                <Route path="pay/success" element={<PaySuccessPage />} />
-                <Route path="pay/cancel" element={<PayCancelPage />} />
-                <Route path="contact" element={<ContactPage />} />
-                <Route path="privacy" element={<PrivacyPolicyPage />} />
-                <Route path="terms" element={<TermsPage />} />
-                <Route path="cookies" element={<CookiesPage />} />
-                <Route path="refund-policy" element={<RefundPolicyPage />} />
-                <Route path="faqs" element={<FAQSPage />} />
-                <Route
-                  path="accredited-trusted"
-                  element={<AccreditedTrustedPage />}
-                />
-                <Route path="rha-summary" element={<RHAPage />} />
-                <Route
-                  path="driver-thank-you"
-                  element={<DriverThankYouPage />}
-                />
-                <Route
-                  path="shipper-thank-you"
-                  element={<ShipperThankYouPage />}
-                />
-                <Route
-                  path="contact-thank-you"
-                  element={<ContactThankYouPage />}
-                />
-                <Route
-                  path="booking-thank-you"
-                  element={<BookingThankYouPage />}
-                />
-                <Route
-                  path="send-parcel"
-                  element={<Navigate to="/quick-quote" replace />}
-                />
-              </Route>
+              {/* Locations */}
+              <Route path="locations" element={<LocationsPage />} />
+              <Route path="locations/:slug" element={<LocationDetailPage />} />
 
-              {/* ── 404 ──────────────────────────────────────────────── */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+              {/* Pay */}
+              <Route path="pay" element={<PayPage />} />
+              <Route path="pay/success" element={<PaySuccessPage />} />
+              <Route path="pay/cancel" element={<PayCancelPage />} />
+
+              {/* Info */}
+              <Route path="about" element={<AboutPage />} />
+              <Route path="contact" element={<ContactPage />} />
+              <Route path="privacy" element={<PrivacyPolicyPage />} />
+              <Route path="terms" element={<TermsPage />} />
+              <Route path="cookies" element={<CookiesPage />} />
+              <Route path="refund-policy" element={<RefundPolicyPage />} />
+              <Route path="faqs" element={<FAQSPage />} />
+              <Route
+                path="accredited-trusted"
+                element={<AccreditedTrustedPage />}
+              />
+              <Route path="rha-summary" element={<RHAPage />} />
+
+              {/* Thank You */}
+              <Route path="driver-thank-you" element={<DriverThankYouPage />} />
+              <Route
+                path="shipper-thank-you"
+                element={<ShipperThankYouPage />}
+              />
+              <Route
+                path="contact-thank-you"
+                element={<ContactThankYouPage />}
+              />
+              <Route
+                path="booking-thank-you"
+                element={<BookingThankYouPage />}
+              />
+
+              {/* Redirect */}
+              <Route
+                path="send-parcel"
+                element={<Navigate to="/quick-quote" replace />}
+              />
+            </Route>
+
+            {/* ── 404 ──────────────────────────────────────────────────── */}
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <NotFound />
+                </Suspense>
+              }
+            />
+          </Routes>
 
           <Chatbot />
         </BrowserRouter>

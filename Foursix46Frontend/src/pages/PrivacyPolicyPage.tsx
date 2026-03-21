@@ -36,13 +36,14 @@ export default function PrivacyPolicyPage() {
             <strong className="text-[#134467]">FourSix46® Global Ltd</strong>
           </p>
           <p>
-            Trading as{" "}
-            <strong className="text-[#48AEDD]">Foursix46® Couriers</strong>
+            trading as{" "}
+            <strong className="text-[#48AEDD]">Route46 Couriers</strong>
           </p>
-          <p>Cardiff, United Kingdom</p>
+          <p>66 Paul Street, London EC2A 4NA, United Kingdom</p>
           <p className="mt-2 text-slate-600">
-            We are the <strong>Data Controller</strong> for the information we
-            collect.
+            FourSix46® Global Ltd is the <strong>Data Controller</strong>{" "}
+            responsible for the personal information collected through our
+            services. For privacy enquiries please contact us.
           </p>
         </div>
       ),
@@ -345,10 +346,11 @@ export default function PrivacyPolicyPage() {
                   Data Protection Commitment
                 </h2>
                 <p className="text-white/90 leading-relaxed">
-                  FourSix46® Global Ltd, trading as Foursix46® Couriers, is
-                  committed to protecting your personal information. This
-                  Privacy Policy explains how we collect and use your data in
-                  line with the UK GDPR and the Data Protection Act 2018.
+                  FourSix46® Global Ltd, trading as Route46 Couriers, is
+                  committed to protecting your personal data and respecting your
+                  privacy. This Privacy Policy explains how we collect, use,
+                  store and safeguard personal information in accordance with
+                  the UK GDPR and the Data Protection Act 2018.
                 </p>
               </div>
             </div>

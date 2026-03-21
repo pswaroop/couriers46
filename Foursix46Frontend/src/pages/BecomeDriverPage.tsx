@@ -324,10 +324,11 @@ export default function BecomeDriverPage() {
                 <Truck className="w-8 h-8 text-[#134467]" />
               </div>
               <h1 className="text-4xl font-bold text-[#F81629] mb-2">
-                Become a Driver
+                Become a Courier Driver with Route46 Couriers
               </h1>
               <p className="text-[#48AEDD] font-medium text-lg">
-                Join FourSix46® - a Brand that Backs You Every Mile of the Way.
+                Join Route46 Couriers and access delivery opportunities across
+                the UK through our nationwide logistics network.
               </p>
             </div>
 
@@ -339,7 +340,7 @@ export default function BecomeDriverPage() {
                   <CheckCircle2 className="w-6 h-6 text-[#48AEDD]" />
 
                   <h3 className="text-xl font-bold text-[#134467]">
-                    Driver Benefits
+                    Why Drive with Route46 Couriers
                   </h3>
                 </div>
 
@@ -348,8 +349,9 @@ export default function BecomeDriverPage() {
                     <span className="text-[#48AEDD] mt-1">✓</span>
 
                     <span className="text-muted-foreground">
-                      <strong>No Upfront Costs:</strong> Start earning
-                      immediately
+                      <strong>Access to Thousands of Delivery Jobs:</strong>{" "}
+                      Connect to courier delivery opportunities across the UK
+                      through our logistics network.
                     </span>
                   </li>
 
@@ -357,7 +359,8 @@ export default function BecomeDriverPage() {
                     <span className="text-[#48AEDD] mt-1">✓</span>
 
                     <span className="text-muted-foreground">
-                      <strong>Flexible Schedule:</strong> Work when it suits you
+                      <strong>Flexible Working Schedule:</strong> Choose when
+                      and where you want to work.
                     </span>
                   </li>
 
@@ -365,8 +368,8 @@ export default function BecomeDriverPage() {
                     <span className="text-[#48AEDD] mt-1">✓</span>
 
                     <span className="text-muted-foreground">
-                      <strong>Fair Compensation:</strong> Competitive rates per
-                      delivery
+                      <strong>Competitive Delivery Rates:</strong> Earn per
+                      delivery with transparent job pricing.
                     </span>
                   </li>
 
@@ -374,8 +377,16 @@ export default function BecomeDriverPage() {
                     <span className="text-[#48AEDD] mt-1">✓</span>
 
                     <span className="text-muted-foreground">
-                      <strong>Full Support:</strong> Dedicated driver support
-                      team
+                      <strong>Nationwide Delivery Opportunities:</strong> Access
+                      courier jobs across major UK cities and regions.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#48AEDD] mt-1">✓</span>
+
+                    <span className="text-muted-foreground">
+                      <strong>Driver Support:</strong> Our team supports drivers
+                      with onboarding and operational guidance.
                     </span>
                   </li>
                 </ul>
@@ -386,7 +397,7 @@ export default function BecomeDriverPage() {
                   <FileCheck className="w-6 h-6 text-[#E53935]" />
 
                   <h3 className="text-xl font-bold text-[#134467]">
-                    Requirements
+                    Driver Requirements
                   </h3>
                 </div>
 
@@ -403,7 +414,7 @@ export default function BecomeDriverPage() {
                     <span className="text-[#E53935]">•</span>
 
                     <span className="text-muted-foreground">
-                      Own vehicle or van
+                      Access to a vehicle or courier van
                     </span>
                   </li>
 
@@ -411,7 +422,7 @@ export default function BecomeDriverPage() {
                     <span className="text-[#E53935]">•</span>
 
                     <span className="text-muted-foreground">
-                      Vehicle insurance
+                      Hire & Reward Insurance (if using own vehicle)
                     </span>
                   </li>
 
@@ -419,7 +430,7 @@ export default function BecomeDriverPage() {
                     <span className="text-[#E53935]">•</span>
 
                     <span className="text-muted-foreground">
-                      Right to work in UK
+                      Right to Work in the UK
                     </span>
                   </li>
 
@@ -1294,7 +1305,7 @@ export default function BecomeDriverPage() {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Once you submit this application, our team will review
-                        your details within 2-3 business days. You'll receive an
+                        your details within 1 business day. You'll receive an
                         email with next steps and access to the driver portal.
                       </p>
                     </div>

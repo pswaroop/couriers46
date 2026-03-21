@@ -175,8 +175,8 @@ export default function ContactPage() {
     },
     {
       icon: MapPin,
-      title: "Visit HQ",
-      content: "Cardiff, Wales, United Kingdom",
+      title: "Head Office",
+      content: "London, England, United Kingdom",
       link: "#",
       color: "#134467",
       bg: "bg-[#134467]/10",
@@ -221,9 +221,9 @@ export default function ContactPage() {
                 "animation-delay-100",
               )}
             >
-              Let's Start a <br className="hidden sm:block" />
+              Contact <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E53935] to-[#E53935]">
-                Conversation
+                Route46 Couriers
               </span>
             </h1>
 
@@ -234,8 +234,8 @@ export default function ContactPage() {
                 "animation-delay-200",
               )}
             >
-              Whether you have a question about shipping, need a business quote,
-              or just want to say hello, our team is ready to help.
+              Whether you need a courier quote, delivery support, or business
+              logistics assistance, the Route46 Couriers team is ready to help.
             </p>
           </div>
         </div>
@@ -512,6 +512,35 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
+        <div
+          className={cn(
+            "flex items-start gap-2.5 max-w-xl mx-auto mt-2 mb-8 px-5 py-3.5 rounded-2xl bg-[#134467]/5 border border-[#134467]/10 justify-center",
+            fadeInUp,
+            "animation-delay-200",
+          )}
+        >
+          {/* Clock / 24-7 icon */}
+          <span className="text-[#48AEDD] mt-0.5 flex-shrink-0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </span>
+          <p className="text-sm text-[#134467]/70 font-medium leading-relaxed text-center">
+            <span className="font-bold text-[#134467]/85">Available 24/7</span>{" "}
+            for urgent courier enquiries across the UK.
+          </p>
+        </div>
 
         {/* FINAL CTA SECTION */}
         <div
@@ -533,9 +562,8 @@ export default function ContactPage() {
               </h2>
 
               <p className="text-[#134467]/80 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                Join thousands of businesses and individuals who trust
-                Foursix46® for their logistics needs. Experience the difference
-                today.
+                Join businesses and individuals across the UK who trust Route46
+                Couriers for reliable courier and delivery services.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -550,7 +578,8 @@ export default function ContactPage() {
                   onClick={() => navigate("/for-businesses")}
                   className="h-16 px-10 border-2 border-[#134467]/100 bg-transparent text-[#134467] hover:bg-[#134467]/100 text-lg font-bold rounded-full transition-all duration-300 hover:-translate-y-1"
                 >
-                  Join Okapi's Network <ArrowRight className="ml-2 w-5 h-5" />
+                  Join Our Courier Network{" "}
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </div>
             </div>

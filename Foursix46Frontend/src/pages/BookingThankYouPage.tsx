@@ -188,50 +188,6 @@ export default function BookingThankYouPage() {
             {/* Divider */}
             <div className="w-full h-px bg-slate-100" />
 
-            {/* Coming Soon Section (VaultX) */}
-            <div className="grid md:grid-cols-2 gap-12 items-center bg-slate-50 rounded-[2rem] p-8 md:p-10 border border-slate-100">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-6"
-              >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#134467] text-white text-xs font-bold uppercase tracking-widest">
-                  <Lock className="w-3 h-3" /> Coming Soon
-                </div>
-
-                <h2 className="text-3xl font-bold text-[#F81629]">
-                  Something new is on the way.
-                </h2>
-
-                <div className="space-y-2">
-                  <p className="text-2xl font-light text-slate-700">
-                    <span className="font-black text-[#48AEDD]">
-                      FourSix46® VaultX
-                    </span>
-                  </p>
-                  <p className="text-lg text-slate-500 font-medium">
-                    The future of FourSix46® begins here.
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* VaultX Logo Image */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 }}
-                className="relative group flex justify-center"
-              >
-                <div className="absolute inset-0 bg-[#48AEDD]/20 rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
-                <img
-                  src="/VaultX.jpeg"
-                  alt="FourSix46® VaultX Logo"
-                  className="relative w-full h-auto object-contain rounded-2xl shadow-lg transform group-hover:scale-105 transition-transform duration-500"
-                />
-              </motion.div>
-            </div>
-
             {/* Footer Quote */}
             <motion.div
               initial={{ opacity: 0 }}

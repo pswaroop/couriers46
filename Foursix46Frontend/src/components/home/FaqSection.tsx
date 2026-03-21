@@ -10,32 +10,34 @@ import { HelpCircle, ArrowRight } from "lucide-react";
 
 const faqs = [
   {
-    question: "How do I track my parcel?",
-    answer: "Use your tracking code on our website or app for real-time updates.",
-  },
-  {
-    question: "Can I request same-day delivery?",
-    answer: "Yes! Same-day delivery is available within the service area.",
-  },
-  {
-    question: "What do I need to become a driver?",
+    question: "How quickly can Route46 Couriers collect my parcel?",
     answer:
-      "A valid UK driving license, vehicle insurance, and proof of right to work.",
+      "Route46 Couriers can arrange courier collection within 60 minutes in most UK cities. Once your booking is confirmed, the nearest available driver is dispatched to your pickup location to collect the parcel and begin delivery immediately. This makes our service ideal for urgent same day deliveries and time-critical shipments.",
   },
   {
-    question: "Do businesses get custom rates?",
+    question: "Do you offer same day courier delivery across the UK?",
     answer:
-      "Yes, sign up on our Business Enquiries page for tailored rates and support.",
+      "Yes. Route46 Couriers provides same day courier services across the UK, including major cities such as London, Cardiff, Birmingham, Manchester, and Bristol. Our courier network ensures fast collection and direct delivery without unnecessary stops, making it perfect for urgent parcels and business deliveries.",
   },
   {
-    question: "What payment methods are available?",
+    question: "What types of items can be delivered by Route46 Couriers?",
     answer:
-      "We accept credit/debit cards, NetBanking, UPI, and popular wallets for your convenience.",
+      "Route46 Couriers can transport pallets,documents, parcels, business shipments, retail goods, medical supplies, and time-critical packages. Our courier vehicles are suitable for a wide range of deliveries, ensuring secure and efficient transport across the UK.",
   },
   {
-    question: "How do I cancel or reschedule a shipment?",
+    question: "How do I get a courier quote for delivery?",
     answer:
-      "You can modify your shipment details via our app or contact support within 24 hours of booking.",
+      "You can request a courier quote directly through the Route46 Couriers website using our Quick Quote form. Simply enter the pickup location, delivery destination, and parcel details to receive an estimated courier price instantly.",
+  },
+  {
+    question: "Can businesses use Route46 Couriers for regular deliveries?",
+    answer:
+      "Yes. Route46 Couriers supports business courier services for companies that require regular deliveries or urgent logistics support. Businesses can create an account and arrange deliveries for documents, parcels, and time-sensitive shipments across the UK.",
+  },
+  {
+    question: "Is parcel tracking available during delivery?",
+    answer:
+      "Yes. Route46 Couriers provides real-time delivery updates, allowing customers to monitor the progress of their shipment from collection to final delivery. This ensures transparency and peace of mind throughout the courier journey.",
   },
 ];
 
@@ -59,7 +61,6 @@ export const FaqSection = () => {
       `}</style>
 
       <div className="max-w-4xl mx-auto relative z-10">
-
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in-up">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#48AEDD]/10 mb-4">
@@ -69,7 +70,8 @@ export const FaqSection = () => {
             Frequently Asked <span className="text-[#E53935]">Questions</span>
           </h2>
           <p className="text-[#134467]/80 mt-4 max-w-2xl mx-auto">
-            Everything you need to know about our services, delivery process, and partnerships.
+            Everything you need to know about our services, delivery process,
+            and partnerships.
           </p>
         </div>
 
@@ -111,7 +113,10 @@ export const FaqSection = () => {
         </Accordion>
 
         {/* View All FAQs Button */}
-        <div className="mt-10 text-center animate-fade-in-up" style={{ animationDelay: "400ms", opacity: 0 }}>
+        <div
+          className="mt-10 text-center animate-fade-in-up"
+          style={{ animationDelay: "400ms", opacity: 0 }}
+        >
           <button
             onClick={() => navigate("/faqs")}
             className="

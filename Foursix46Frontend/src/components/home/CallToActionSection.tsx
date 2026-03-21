@@ -17,12 +17,13 @@ export const CallToActionSection = ({
 
     <div className="max-w-4xl mx-auto text-center relative z-10">
       <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 animate-fade-in">
-        Ready to Get Started?
+        Need a Same Day Courier Delivery?
       </h2>
       <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto animate-fade-in">
-        Join thousands of satisfied customers who trust FourSix46® for their
-        delivery needs. Get your instant quote or reach out for business
-        solutions.
+        Route46 Couriers provides fast and reliable courier services across the
+        UK. Through our nationwide logistics network, we have access to
+        thousands of courier drivers and delivery vehicles ready to handle
+        urgent shipments, business deliveries, and time-critical transport.
       </p>
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-scale-in">
         <Button
@@ -41,7 +42,7 @@ export const CallToActionSection = ({
           onClick={onBusinessEnquiry}
         >
           <Building2 className="w-5 h-5 mr-2" />
-          Business Enquiries
+          Open Business Account
         </Button>
       </div>
 
@@ -52,19 +53,23 @@ export const CallToActionSection = ({
       <div className="mt-12 grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto items-center">
         <div className="text-center">
           <p className="text-xl sm:text-3xl font-bold text-white mb-1">24/7</p>
-          <p className="text-[10px] sm:text-sm text-white/80 leading-tight">Service Availability</p>
+          <p className="text-[10px] sm:text-sm text-white/80 leading-tight">
+            Service operating across the UK
+          </p>
         </div>
-        
+
         {/* Center item with borders to visually separate */}
         <div className="text-center border-x border-white/10 px-2">
-          <p className="text-xl sm:text-3xl font-bold text-white mb-1">25+</p>
-          <p className="text-[10px] sm:text-sm text-white/80 leading-tight">Approved Drivers</p>
+          <p className="text-xl sm:text-3xl font-bold text-white mb-1">4000+</p>
+          <p className="text-[10px] sm:text-sm text-white/80 leading-tight">
+            Approved Drivers
+          </p>
         </div>
-        
+
         <div className="text-center">
           <p className="text-xl sm:text-3xl font-bold text-white mb-1">100%</p>
           <p className="text-[10px] sm:text-sm text-white/80 leading-tight">
-            Insured Deliveries
+            Nationwide Courier Coverage
           </p>
         </div>
       </div>

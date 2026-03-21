@@ -7,7 +7,6 @@ interface CommitmentSectionProps {
 
 export const CommitmentSection = ({ benefits }: CommitmentSectionProps) => (
   <section className="py-20 px-4 sm:px-8 bg-gradient-to-b from-white to-slate-50 relative overflow-hidden">
-
     {/* Inline Animation Styles */}
     <style>{`
       @keyframes fadeInUp {
@@ -25,17 +24,24 @@ export const CommitmentSection = ({ benefits }: CommitmentSectionProps) => (
     <div className="absolute -right-20 bottom-20 w-64 h-64 bg-[#F5EB18]/5 rounded-full blur-3xl pointer-events-none" />
 
     <div className="max-w-5xl mx-auto relative z-10">
-
-      <div className="text-center mb-16 animate-fade-in-up" style={{ opacity: 0 }}>
+      <div
+        className="text-center mb-16 animate-fade-in-up"
+        style={{ opacity: 0 }}
+      >
         <div className="inline-flex items-center gap-2 mb-3 px-4 py-1 rounded-full bg-[#134467]/5 border border-[#134467]/10">
           <ShieldCheck className="w-4 h-4 text-[#E53935]" />
-          <span className="text-xs font-bold uppercase tracking-widest text-[#134467]">Our Promise</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#134467]">
+            Our Promise
+          </span>
         </div>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#134467] mb-4">
-          Commitment to <span className="text-[#48AEDD]">Excellence</span>
+          Reliable Same Day Courier Services{" "}
+          <span className="text-[#48AEDD]">Across the UK</span>
         </h2>
         <p className="text-[#134467]/80 max-w-2xl mx-auto text-lg">
-          We don't just deliver parcels; we deliver on our promises. Every step of the journey is guided by our core values.
+          Looking for a reliable same day courier service in the UK? <br />
+          Route46 Couriers provides fast collection and secure delivery for
+          urgent shipments and business logistics.
         </p>
       </div>
 
@@ -46,9 +52,13 @@ export const CommitmentSection = ({ benefits }: CommitmentSectionProps) => (
             className={cn(
               "group flex items-start gap-4 p-6 rounded-2xl bg-white border border-slate-100 shadow-sm",
               "hover:shadow-xl hover:border-[#E53935]/20 hover:-translate-y-1 transition-all duration-300 cursor-default",
-              "animate-fade-in-up"
+              "animate-fade-in-up",
             )}
-            style={{ animationDelay: `${200 + idx * 100}ms`, opacity: 0, animationFillMode: 'forwards' }}
+            style={{
+              animationDelay: `${200 + idx * 100}ms`,
+              opacity: 0,
+              animationFillMode: "forwards",
+            }}
           >
             <div className="w-12 h-12 rounded-xl bg-[#E53935]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E53935] transition-colors duration-300">
               <CheckCircle2 className="w-6 h-6 text-[#E53935] group-hover:text-white transition-colors duration-300" />

@@ -39,7 +39,7 @@ export default function TermsPage() {
           <p>
             <strong className="text-[#134467]">FourSix46® Global Ltd</strong>,
             trading as{" "}
-            <strong className="text-[#134467]">FourSix46® Couriers</strong>,
+            <strong className="text-[#134467]">Route46 Couriers</strong>,
             undertakes all carriage and related services strictly under the{" "}
             <strong className="text-[#E53935]">
               Road Haulage Association (RHA) Conditions of Carriage 2024
@@ -47,12 +47,10 @@ export default function TermsPage() {
             .
           </p>
           <p>
-            No other terms apply unless expressly agreed in writing and signed
-            by a{" "}
-            <strong className="text-[#134467]">
-              Director of FourSix46® Global Ltd
-            </strong>
-            .
+            All transport and delivery services are undertaken in accordance
+            with these industry-standard conditions, which set out the rights,
+            responsibilities and liability limits applicable to UK road freight
+            operations.
           </p>
           <p>
             By booking a delivery, opening an account, or consigning goods, the
@@ -62,6 +60,23 @@ export default function TermsPage() {
           </p>
           <p className="italic text-sm">
             A full copy of the RHA Conditions is available upon request.
+          </p>
+          <p>
+            These Terms and Conditions govern the provision of courier,
+            transport, and related logistics services oered by FourSix46® Global
+            Ltd, trading as Route46 Couriers, within the United Kingdom. All
+            carriage and delivery services arranged by Route46 Couriers are
+            undertaken strictly in accordance with the Road Haulage Association
+            (RHA) Conditions of Carriage 2024, which set out the standard terms,
+            responsibilities, and liability limits applicable to road freight
+            operations in the UK. By requesting a delivery quotation, booking a
+            shipment, opening an account, or consigning goods for transport, the
+            customer conrms their acceptance of these Terms and Conditions and
+            the applicable RHA Conditions of Carriage 2024. No additional or
+            alternative terms shall apply unless expressly agreed in writing and
+            signed by an authorised director of FourSix46® Global Ltd. A full
+            copy of the RHA Conditions of Carriage 2024 is available upon
+            request.
           </p>
         </div>
       ),
@@ -79,7 +94,7 @@ export default function TermsPage() {
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>
-              <strong>“Carrier”</strong> – FourSix46® Global Ltd
+              <strong>“Carrier”</strong> – Route46 Global Ltd
             </li>
             <li>
               <strong>“Customer”</strong> – Any person or business using the
@@ -542,7 +557,7 @@ export default function TermsPage() {
               "animation-delay-300",
             )}
           >
-            Last Updated: 25/11/2025
+            Last Updated: 16/03/2026
           </p>
         </div>
       </div>
@@ -565,10 +580,9 @@ export default function TermsPage() {
                   Important Agreement
                 </h2>
                 <p className="text-white/90 leading-relaxed">
-                  FourSix46® Global Ltd, trading as FourSix46® Couriers,
-                  undertakes all carriage and related services strictly under
-                  the Road Haulage Association (RHA) Conditions of Carriage
-                  2024.
+                  Route46 Global Ltd, trading as Route46 Couriers, undertakes
+                  all carriage and related services strictly under the Road
+                  Haulage Association (RHA) Conditions of Carriage 2024.
                 </p>
               </div>
             </div>
@@ -623,10 +637,11 @@ export default function TermsPage() {
               <ShieldCheck className="w-6 h-6 text-[#E53935]" />
             </div>
             <p className="text-sm text-slate-600 font-medium">
-              FourSix46® Global Ltd — Trading as FourSix46® Couriers
+              FourSix46® Global Ltd — Trading as Route46 Couriers
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              Registered in England & Wales
+              FourSix46 Global Ltd Trading as Route46 Couriers, 66 Paul Street,
+              London EC2A 4NA, United Kingdom
             </p>
           </div>
         </div>

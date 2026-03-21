@@ -29,7 +29,7 @@ const FlipCard = ({ item }: { item: WhyChooseItem }) => {
           // Mobile: Flip controlled by Click state
           isFlipped ? "[transform:rotateY(180deg)]" : "",
           // Desktop: Flip controlled by Hover
-          "lg:group-hover:[transform:rotateY(180deg)]"
+          "lg:group-hover:[transform:rotateY(180deg)]",
         )}
       >
         {/* Front Side - Navy Blue Background with Yellow Border */}
@@ -41,8 +41,6 @@ const FlipCard = ({ item }: { item: WhyChooseItem }) => {
           <p className="text-sm text-white/70 text-center leading-snug">
             {item.description}
           </p>
-
-
         </div>
 
         {/* Back Side - White Background with Red Border */}
@@ -53,7 +51,6 @@ const FlipCard = ({ item }: { item: WhyChooseItem }) => {
           <p className="text-sm font-medium leading-relaxed text-[#134467]/90">
             {item.detail}
           </p>
-
         </div>
       </div>
     </div>
@@ -64,10 +61,10 @@ export const WhyChooseFlipSection = ({ items }: WhyChooseFlipSectionProps) => (
   <section className="py-20 px-4 sm:px-8 lg:px-12 bg-white relative z-20">
     <div className="max-w-4xl mx-auto text-center mb-12 animate-fade-in">
       <p className="text-sm uppercase tracking-widest font-bold text-[#2B7CB3]">
-        Delivering differently
+        Professional Courier Solutions Across the UK
       </p>
       <h2 className="text-3xl sm:text-4xl font-extrabold text-[#134467]">
-        Why Choose <span className="text-[#E53935]">FourSix46</span>?
+        Why Choose Route46 Couriers for Same Day Delivery?
       </h2>
     </div>
 

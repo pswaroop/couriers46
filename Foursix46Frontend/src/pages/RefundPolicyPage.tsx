@@ -349,10 +349,31 @@ export default function RefundPolicyPage() {
                   Policy Overview
                 </h2>
                 <p className="text-white/90 leading-relaxed">
-                  This Refund & Cancellation Policy applies to all services
-                  provided by FourSix46® Global Ltd. Where there is any conflict
-                  between this Policy and the RHA Conditions, the RHA Conditions
-                  of Carriage 2024 shall prevail.
+                  This Refund & Cancellation Policy applies to courier,
+                  transport, and logistics services provided by FourSix46®
+                  Global Ltd, trading as Route46 Couriers, within the United
+                  Kingdom.
+                </p>
+                <br />
+                <p className="text-white/90 leading-relaxed">
+                  All delivery and transport services are undertaken in
+                  accordance with the Road Haulage Association (RHA) Conditions
+                  of Carriage 2024, which set out the industry-standard terms
+                  governing liability, claims, and compensation for road freight
+                  services.
+                </p>
+                <br />
+                <p className="text-white/90 leading-relaxed">
+                  Where any conflict arises between this Refund & Cancellation
+                  Policy and the RHA Conditions of Carriage 2024, the RHA
+                  Conditions shall take precedence.
+                </p>
+                <br />
+                <p className="text-white/90 leading-relaxed">
+                  This policy outlines how booking cancellations, refunds, and
+                  related service adjustments are handled in accordance with
+                  operational planning, driver dispatch procedures, and
+                  transport commitments.
                 </p>
               </div>
             </div>

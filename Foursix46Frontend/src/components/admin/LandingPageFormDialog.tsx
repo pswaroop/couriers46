@@ -530,7 +530,7 @@ export function LandingPageFormDialog({
                   value={form.intro}
                   onChange={(e) => update({ intro: e.target.value })}
                   rows={5}
-                  placeholder="<p>For same day courier services in Cardiff, FourSix46® provides...</p>"
+                  placeholder="<p>For same day courier services in Cardiff, Route46 provides...</p>"
                   className="font-mono text-sm"
                 />
               </div>

@@ -108,8 +108,8 @@ export default function RhaConditionsPage() {
               "animation-delay-100",
             )}
           >
-            RHA Conditions of{" "}
-            <span className="text-[#E53935]">Carriage 2024</span>
+            RHA Conditions of Carriage{" "}
+            <span className="text-[#E53935]">(2024 Edition)</span>
           </h1>
 
           <div
@@ -131,9 +131,9 @@ export default function RhaConditionsPage() {
               "animation-delay-300",
             )}
           >
-            FourSix46® Global Ltd (trading as FourSix46® Couriers) undertakes
-            all carriage strictly under the Road Haulage Association's
-            Conditions of Carriage 2024.
+            Route46 Couriers is a trading name of FourSix46® Global Ltd. All
+            carriage undertaken by Route46 Couriers is subject to the Road
+            Haulage Association (RHA) Conditions of Carriage 2024.
           </p>
           <p
             className={cn(
@@ -142,9 +142,9 @@ export default function RhaConditionsPage() {
               "animation-delay-300",
             )}
           >
-            Last Updated by FourSix46®: {new Date().toLocaleDateString()} <br />
-            This summary page is maintained by FourSix46®. The original RHA
-            Conditions remain unchanged.
+            Last updated by Route46 Couriers – 16 March 2026 <br />
+            This summary page is maintained by Route46 Couriers. The original
+            RHA Conditions of Carriage remain unchanged.
           </p>
         </div>
       </div>

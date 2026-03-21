@@ -6,36 +6,36 @@ export const TestimonialsSection = () => {
   const originalTestimonials = [
     {
       quote:
-        "“FourSix46’s courier service is the best I’ve used! Fast delivery and real-time updates keep me confident.”",
-      name: "Neha, Manchester",
-      role: "Small Business Owner",
+        "“Route46 Couriers handled our urgent same-day delivery perfectly. The driver collected the parcel within the hour and delivered it safely across the city. Reliable courier service when timing really matters.”",
+      name: "David – Bristol",
+      role: "Logistics Manager",
       initial: "N",
       color: "#E53935", // Red
       bg: "bg-[#E53935]/10",
     },
     {
       quote:
-        "“Flexible driving hours and great pay. FourSix46® really cares about its team and customers.”",
-      name: "Ali, Birmingham",
-      role: "Driver",
+        "“We use Route46 Couriers regularly for business shipments. The booking process is simple, pricing is transparent, and the delivery updates keep us informed throughout the journey.”",
+      name: "Neha – Manchester",
+      role: "Small Business Owner",
       initial: "A",
       color: "#48AEDD", // Blue
       bg: "bg-[#48AEDD]/10",
     },
     {
       quote:
-        "“Finally a courier service that treats my packages with respect. The tracking is spot on every time.”",
-      name: "Sarah, London",
-      role: "Online Retailer",
+        "“I needed a passport delivered urgently and Route46 arranged a courier collection within minutes. The service was fast, professional, and exactly what I needed for a time-critical delivery.”",
+      name: "James – London",
+      role: "Private Client",
       initial: "S",
       color: "#134467", // Navy
       bg: "bg-[#134467]/10",
     },
     {
       quote:
-        "“Joining the network was seamless. The app is easy to use and the support team is always there.”",
-      name: "Mike, Leeds",
-      role: "Fleet Driver",
+        "“Our company depends on reliable logistics partners, and Route46 Couriers has consistently delivered. From documents to urgent parcels, their same-day courier service across the UK has been excellent.”",
+      name: "Sarah – Birmingham",
+      role: "Operations Manager",
       initial: "M",
       color: "#F5EB18", // Yellow
       bg: "bg-[#F5EB18]/20",
@@ -43,9 +43,9 @@ export const TestimonialsSection = () => {
     },
     {
       quote:
-        "“Reliable, professional, and prompt. Exactly what our logistics department needed.”",
-      name: "David, Bristol",
-      role: "Logistics Manager",
+        "“Fast collection, friendly driver, and clear communication from start to finish. Route46 Couriers made our urgent delivery stress-free. Highly recommended courier service.”",
+      name: "Michael – Cardiff",
+      role: "Retail Business Owner",
       initial: "D",
       color: "#E53935",
       bg: "bg-[#E53935]/10",

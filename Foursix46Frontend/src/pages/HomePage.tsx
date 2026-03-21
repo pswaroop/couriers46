@@ -17,59 +17,62 @@ export default function HomePage() {
   const whyChooseItems = [
     {
       icon: Send,
-      title: "Instant Quotes",
-      description: "Transparent pricing before you send.",
+      title: "Same Day Delivery",
+      description:
+        "Fast and reliable same day courier delivery available across the UK for urgent parcels,documents and business shipments",
       detail:
-        "Our pricing engine gives real-time quotes tailored to parcel size, urgency, and distance—no surprises.",
+        "Route46 Couriers provides reliable same day courier services across the UK, ensuring urgent parcels, documents, and business shipments are collected quickly and delivered directly without delays.",
     },
     {
       icon: Truck,
-      title: "Driver Excellence",
-      description: "Professionals vetted & supported.",
+      title: "Live Parcel Tracking",
+      description:
+        "Track your courier delivery in real time with full visibility from collection to final delivery",
       detail:
-        "Our Okapi Network equips drivers with smart routing, live support, and performance-based incentives.",
+        "Route46 Couriers provides live parcel tracking so customers can monitor their delivery from collection to final destination with complete transparency and real-time updates.",
     },
     {
       icon: Building2,
-      title: "Business Benefits",
-      description: "Join Okapi's Network",
+      title: "60 Minute Collection",
+      description:
+        "Courier pickup available within 60 minutes in major UK cities for urgent and timecritical deliveries",
       detail:
-        "Grow Your Business as an Okapi's Shipping Partner with 20% discount on business rates.",
+        "In most major UK cities, Route46 Couriers can arrange collection within 60 minutes, making it ideal for urgent deliveries, time-sensitive documents, and business logistics.",
     },
   ];
 
   const driverBenefits = [
-    "Flexible Hours, Competitive Earnings, and Support Every Mile of the Way.",
-    "Drive with Freedom. Earn with FourSix46. Training and Insurance Provided.",
-    "Dedicated Community Managers to Support Your Success.",
+    "Flexible working hours with competitive courier earnings and full operational support.",
+    "Earn money delivering parcels with Route46 Couriers. Driver onboarding, guidance, and insurance support available.",
+    "Dedicated support team helping courier drivers manage deliveries and grow their earning potential.",
   ];
 
   const businessBenefits = [
-    "Smarter shipping. Better margins. Happier customers. Trusted Delivery Solutions.",
-    "Volume-based discounts & custom pricing models to fit your needs",
-    "Let's move your Business Forward, Together & Stronger.",
+    "Reliable courier delivery solutions designed for businesses that require fast and secure transport.",
+    "Flexible courier solutions for businesses with regular delivery requirements.",
+    "Trusted courier services helping businesses move parcels, documents, and urgent shipments across the UK.",
   ];
 
   const individualBenefits = [
-    "Book in Minutes, Delivered with Care.",
-    "Courier Pickup within 60 minutes for Urgent Deliveries",
-    "Your Parcel, Your Way - Multiple Delivery Options to Suit Your Needs.",
+    "Instant courier quotes with transparent pricing before booking.",
+    "Courier collection available within 60 minutes in most UK cities.",
+    "Suitable for parcels, documents, pallets, and urgent deliveries.",
   ];
 
   const commitmentBenefits = [
-    "Same-day Delivery Available",
-    "Transparent Pricing with No Hidden Fees",
-    "Professional and Vetted Drivers",
-    "Real-time Tracking of Your Parcel",
-    "60 minutes courier pickup for Priority Parcels",
-    "Outstanding Customer Support",
+    "Same Day Courier Delivery Across the UK",
+    "Transparent Courier Pricing with No Hidden Charges",
+    "Professional Courier Drivers and Verified Transport Partners",
+    "Real-Time Courier Tracking for Every Delivery",
+    "Courier Collection Within 60 Minutes in Major UK Cities",
+    "Dedicated 24/7 Customer Support for Urgent Deliveries",
   ];
 
   return (
     <div className="min-h-screen">
       <HeroSection
-        backgroundImageUrl="/FourSix_truckimage.jpg"
-        mobileBackgroundImageUrl="/FS46 Hero Mobile.jpg"
+        backgroundImageUrl="/route462.jpeg"
+        mobileBackgroundImageUrl="/route462.jpeg"
         // backgroundImageUrl="/FourSixLogo.png"
         onSendParcel={() => navigate("/quick-quote")}
         onJoinNetwork={() => navigate("/for-businesses")}
@@ -78,33 +81,29 @@ export default function HomePage() {
       <TrustLogosSection />
       <WhyChooseFlipSection items={whyChooseItems} />
       <SplitFeatureSection
-        eyebrow="Become a driver"
-        title="Drive with FourSix46®"
-        description="Join Our Growing Network of Professional Drivers delivering trust across the UK. Your Wheels. Your Freedom. Your Future."
-        image="/Driver V2 FS46.jpg"
+        eyebrow="Become a Courier Driver"
+        title="Driver with Route46 Couriers"
+        description="Join the Route46 Couriers driver network and deliver parcels across the UK with flexible working
+opportunities. Our courier drivers handle urgent deliveries, business shipments, and same day
+courier services for customers nationwide."
+        image="/route461.jpeg"
         benefits={driverBenefits}
         cta={{
-          label: "Drive with FourSix46®",
+          label: "Drive with Route46",
           onClick: () => navigate("/become-driver"),
         }}
-        highlight={
-          <div>
-            <p className="text-2xl font-bold text-secondary">£800</p>
-            <p className="text-sm text-muted-foreground">
-              Average Weekly Earnings
-            </p>
-          </div>
-        }
       />
       <SplitFeatureSection
-        eyebrow="Become a Shipper"
-        title="Join Okapi's Network"
-        description="Whether you’re shipping a single parcel or managing enterprise logistics, Okapi’s platform scales with your business needs and you’ll receive a 20% discount on business rates."
-        image="/Shipper V2 FS46.jpg"
+        eyebrow="Courier Services for Businesses"
+        title="Join Our Courier Network"
+        description="Whether you're sending a single parcel or managing regular business deliveries,  Couriers
+provides reliable same day courier services across the UK. Our courier network supports
+businesses with urgent shipments, document transport, and time-critical logistics."
+        image="/route463.jpeg"
         benefits={businessBenefits}
         reverse
         cta={{
-          label: "Join Okapi's Network",
+          label: "Join Our Courier Network",
           onClick: () => navigate("/for-businesses"),
         }}
         highlight={
@@ -117,10 +116,12 @@ export default function HomePage() {
         }
       />
       <SplitFeatureSection
-        eyebrow="For individuals"
-        title="Send Parcels Like a Pro"
-        description="Enjoy Seamless Parcel Delivery with Real-Time Tracking, Instant Quotes, and Reliable Service Tailored for You."
-        image="/Customer V1 FS46.jpg"
+        eyebrow="INSTANT COURIER QUOTE"
+        title="Request an Instant Courier Quote Across the UK"
+        description="Route46 Couriers provides fast and reliable courier services
+across the UK. Request an instant courier quote and arrange collection for urgent parcels,
+documents, and time-critical deliveries."
+        image="/route464.jpeg"
         benefits={individualBenefits}
         cta={{ label: "Quick Quote", onClick: () => navigate("/quick-quote") }}
         highlight={

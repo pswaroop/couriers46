@@ -9,6 +9,7 @@ import { Send, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/Footer";
+import { LoadingAnimation } from "@/components/shared/LoadingAnimation";
 
 export default function QuickQuotePage() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function QuickQuotePage() {
 
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
@@ -75,17 +77,21 @@ export default function QuickQuotePage() {
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.message || "Failed to submit quote.");
-      toast.success("Thanks — we'll confirm your quote shortly.");
-      setForm(initialState);
+      setIsSubmitting(true);
+      navigate("/get-a-quote/thank-you");
     } catch (error: any) {
       toast.error(error.message || "Something went wrong.");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <>
+      {isSubmitting && (
+        <LoadingAnimation message="Submitting your driver application..." />
+      )}
       <div className="min-h-screen py-12 px-4 sm:px-8 bg-gradient-to-br from-[#E53935]/5 via-white to-[#134467]/5">
         <div className="max-w-4xl mx-auto">
           <Button
@@ -102,9 +108,12 @@ export default function QuickQuotePage() {
               <div className="w-16 h-16 mx-auto bg-[#F5EB18] rounded-full flex items-center justify-center mb-4">
                 <Send className="w-8 h-8 text-[#134467]" />
               </div>
-              <h1 className="text-4xl font-bold text-[#F81629]">Quick Quote</h1>
+              <h1 className="text-4xl font-bold text-[#F81629]">
+                Get an Instant Courier Quote
+              </h1>
               <p className="text-[#48AEDD] mt-2">
-                Request a delivery quote — no booking required
+                Request an instant quote for same day courier delivery across
+                the UK. No booking required.
               </p>
             </div>
 
@@ -368,6 +377,34 @@ export default function QuickQuotePage() {
               </Button>
             </form>
           </Card>
+        </div>
+        <div
+          className="flex items-start justify-center gap-2.5 max-w-xl mx-auto
+  mt-6 mb-10 px-4 py-3 rounded-2xl
+  bg-[#134467]/4 border border-[#134467]/10"
+        >
+          <span className="text-[#134467]/50 mt-0.5 flex-shrink-0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </span>
+          <p className="text-xs text-[#134467]/55 font-medium leading-relaxed text-left">
+            <span className="font-bold text-[#134467]/70">Disclaimer: </span>
+            Submitting this form does not confirm a booking. Our team will
+            review your request and provide a courier quote shortly.
+          </p>
         </div>
 
         <Footer />
