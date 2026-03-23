@@ -198,6 +198,8 @@ function RenderBlock({ block }: { block: Block }) {
       return <CtaBannerBlock block={block} />;
     case "richText":
       return <RichTextBlock block={block} />;
+    case "textSection": // ← ADD THIS
+      return <RichTextBlock block={block} />;
     default:
       return null;
   }
