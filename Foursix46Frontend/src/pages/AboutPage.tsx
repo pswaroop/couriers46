@@ -536,7 +536,7 @@ export default function AboutPage() {
               fadeInUp,
             )}
           >
-            One Identity, Infinite Industries
+            ONE IDENTITY, NATIONWIDE COURIER NETWORK
           </span>
           <h1
             className={cn(
@@ -581,28 +581,6 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto space-y-24">
           {/* ── ABOUT ROUTE46 COURIERS ── */}
           <section className={cn("space-y-8", fadeInUp)}>
-            <div className="text-center max-w-3xl mx-auto">
-              <span className="inline-block text-[11px] font-black uppercase tracking-[0.2em] bg-[#134467]/5 text-[#134467] px-5 py-2 rounded-full border border-[#134467]/10 mb-4">
-                Who We Are
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-[#134467] mb-4">
-                About <span className="text-[#E53935]">Route46 Couriers</span>
-              </h2>
-              <div className="w-12 h-1 rounded-full bg-[#E53935] mx-auto mb-6" />
-              <p className="text-base sm:text-lg text-[#134467]/75 leading-relaxed">
-                Route46 Couriers was established to simplify access to
-                professional courier services across the UK. Through a modern
-                logistics model and access to thousands of independent courier
-                drivers and vehicles nationwide, Route46 Couriers enables rapid
-                collection, time-critical deliveries, and flexible transport
-                solutions for businesses and individuals. Whether it is urgent
-                documents, parcels, pallet shipments, or scheduled business
-                deliveries, Route46 Couriers ensures that shipments are handled
-                by experienced courier professionals operating under recognised
-                UK logistics standards.
-              </p>
-            </div>
-
             {/* Key Highlights */}
             <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm max-w-2xl mx-auto">
               <h3 className="text-sm font-black text-[#134467] uppercase tracking-widest mb-5 flex items-center gap-2">
@@ -627,6 +605,27 @@ export default function AboutPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+            <div className="text-center max-w-3xl mx-auto">
+              <span className="inline-block text-[11px] font-black uppercase tracking-[0.2em] bg-[#134467]/5 text-[#134467] px-5 py-2 rounded-full border border-[#134467]/10 mb-4">
+                Who We Are
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#134467] mb-4">
+                How <span className="text-[#E53935]">Route46 Works</span>
+              </h2>
+              <div className="w-12 h-1 rounded-full bg-[#E53935] mx-auto mb-6" />
+              <p className="text-base sm:text-lg text-[#134467]/75 leading-relaxed">
+                Route46 Couriers was established to simplify access to
+                professional courier services across the UK. Through a modern
+                logistics model and access to thousands of independent courier
+                drivers and vehicles nationwide, Route46 Couriers enables rapid
+                collection, time-critical deliveries, and flexible transport
+                solutions for businesses and individuals. Whether it is urgent
+                documents, parcels, pallet shipments, or scheduled business
+                deliveries, Route46 Couriers ensures that shipments are handled
+                by experienced courier professionals operating under recognised
+                UK logistics standards.
+              </p>
             </div>
           </section>
 

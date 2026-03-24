@@ -491,7 +491,7 @@ export const Navigation = () => {
                 <Truck className="w-5 h-5" />
               </div>
               <span className="text-[#48AEDD] font-bold text-xl">
-                FourSix<span className="text-[#E53935]">46</span>
+                Route<span className="text-[#E53935]">46</span>
               </span>
             </div>
             <button

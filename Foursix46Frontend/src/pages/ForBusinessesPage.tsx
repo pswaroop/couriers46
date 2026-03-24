@@ -1550,8 +1550,8 @@ export default function ForBusinessesPage() {
                               className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
                             >
                               I confirm that I have authority to register this
-                              business. I accept FourSix46's Terms and
-                              Conditions, and Privacy Policy.
+                              business. I accept Route46's Terms and Conditions,
+                              and Privacy Policy.
                             </Label>
                             <FormMessage />
                           </div>

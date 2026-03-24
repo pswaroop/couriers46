@@ -158,8 +158,8 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "Email Us",
-      content: "operations@foursix46.com",
-      link: "mailto:operations@foursix46.com",
+      content: "operations@route46couriers.co.uk",
+      link: "mailto:operations@route46couriers.co.uk",
       color: "#E53935",
       bg: "bg-[#E53935]/10",
       border: "group-hover:border-[#E53935]/30",

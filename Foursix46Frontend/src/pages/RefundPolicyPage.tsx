@@ -326,7 +326,7 @@ export default function RefundPolicyPage() {
               "animation-delay-300",
             )}
           >
-            Last Updated: 25/11/2025
+            Last Updated: 23/03/2026
           </p>
         </div>
       </div>

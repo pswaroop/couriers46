@@ -1714,7 +1714,7 @@ export default function LocationDetailPage() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight mb-4">
-            Need a courier in {location.name}?
+            Need a Same Day Courier in {location.name}?
           </h2>
           <p className="text-white/60 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-[1.85] font-medium">
             Get an instant quote — same-day dispatch available across the UK

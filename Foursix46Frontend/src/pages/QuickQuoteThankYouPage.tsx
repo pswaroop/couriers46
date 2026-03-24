@@ -78,7 +78,7 @@ export default function QuickQuoteThankYouPage() {
                 <p>
                   Your quote request has been submitted to the{" "}
                   <span className="font-bold text-[#48AEDD]">
-                    FourSix46® Couriers team
+                    Route46 Couriers team
                   </span>
                   .
                 </p>
@@ -161,7 +161,9 @@ export default function QuickQuoteThankYouPage() {
               <Button
                 variant="outline"
                 onClick={() => navigate("/get-a-quote")}
-                className="border-[#48AEDD] text-[#48AEDD] hover:bg-[#48AEDD]/5 px-8 py-5 text-base rounded-xl"
+                className="border-[#48AEDD] text-[#48AEDD] 
+             hover:bg-[#48AEDD] hover:text-white 
+             px-8 py-5 text-base rounded-xl transition"
               >
                 Submit Another Quote
               </Button>

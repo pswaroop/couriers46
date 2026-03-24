@@ -78,7 +78,7 @@ export default function ShipperThankYouPage() {
                 <p>
                   Thank you for taking the first step to{" "}
                   <span className="font-bold text-[#48AEDD]">
-                    Join Okapi’s Network
+                    Join Our Courier Network
                   </span>
                   .
                 </p>

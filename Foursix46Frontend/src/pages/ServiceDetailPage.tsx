@@ -1560,8 +1560,9 @@ export default function ServiceDetailPage() {
           </h2>
           <p className="text-white/60 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-[1.85] font-medium">
             Route46 Couriers provides reliable same-day transport across the UK
-            with professional drivers, secure handling, and real-time delivery
-            updates.
+            with access to thousands of verified drivers and vehicles through
+            our extended courier network, ensuring fast collection, secure
+            handling, and true nationwide delivery coverage.
           </p>
           <button
             onClick={() => navigate(service.ctaPrimaryLink || "/quick-quote")}
