@@ -2708,6 +2708,7 @@ import {
   Eye,
   RefreshCw,
   Trash2,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -2836,6 +2837,7 @@ type DashboardView =
   | "faqs"
   | "blogs"
   | "quickQuotes"
+  | "vatSettings"
   | "payments";
 
 interface Booking {
@@ -3659,8 +3661,8 @@ export default function AdminDashboardPage() {
           "Blog post",
         )}
       />
-      // Inside your admin settings page/tab:
-      <VatSettingsCard />
+
+      {currentView === "vatSettings" && <VatSettingsCard />}
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <header className="flex items-center justify-between p-4 md:p-6 bg-card border-b">
         <div>
@@ -3763,6 +3765,7 @@ export default function AdminDashboardPage() {
               count: quickQuotes.length,
             },
             { view: "payments", label: "Payments", count: payments.length },
+            { view: "vatSettings", label: "VAT Settings", count: undefined },
           ].map(({ view, label, count }) => (
             <Card
               key={view}
@@ -3773,8 +3776,16 @@ export default function AdminDashboardPage() {
                 <CardTitle className="text-sm">{label}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{count}</div>
-                <p className="text-xs text-muted-foreground">Manage {label}</p>
+                <div className="text-2xl font-bold">
+                  {count !== undefined ? (
+                    count
+                  ) : (
+                    <Settings className="h-5 w-5 text-muted-foreground mt-1" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {count !== undefined ? `Manage ${label}` : "Configure"}
+                </p>
               </CardContent>
             </Card>
           ))}
