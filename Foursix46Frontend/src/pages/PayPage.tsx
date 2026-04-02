@@ -398,17 +398,17 @@ export default function PayPage() {
                 <p className="text-sm text-[#134467]/80 leading-relaxed">
                   Payments are processed securely via{" "}
                   <strong className="text-[#134467]">Stripe</strong>, a globally
-                  trusted payment provider. FourSix46 Global Ltd does not store
-                  or have access to your card details.
+                  trusted payment provider. FourSix46&reg; Global Ltd does not
+                  store or have access to your card details.
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-[#134467] mt-0.5 shrink-0" />
                 <p className="text-sm text-[#134467]/80 leading-relaxed">
                   This payment page is used for invoice settlement, service
-                  payments, or agreed charges across FourSix46 ventures. Please
-                  ensure the payment amount and reference details are correct
-                  before proceeding.
+                  payments, or agreed charges across FourSix46&reg; ventures.
+                  Please ensure the payment amount and reference details are
+                  correct before proceeding.
                 </p>
               </div>
               <p className="text-sm text-[#134467]/70 leading-relaxed pl-8">
