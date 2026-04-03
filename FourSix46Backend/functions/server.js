@@ -1,4 +1,5 @@
-require("dotenv").config(); // Loads .env variables
+require("dotenv").config();
+
 const express = require("express");
 const admin = require("firebase-admin");
 const cors = require("cors");
@@ -9,8 +10,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // Initialize Firebase Admin
 // For Vercel/Render: Use JSON from environment variable
-// For local: Use file path or applicationDefault
-// Storage bucket name from Firebase config
+//test
 // Note: If bucket doesn't exist, enable Firebase Storage in Firebase Console
 const STORAGE_BUCKET = "foursix46-production-4a43f.appspot.com";
 const PROJECT_ID = "foursix46-production-4a43f";
@@ -88,10 +88,9 @@ try {
 
 const app = express();
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:8080',
   'https://couriers46.vercel.app',
-  'https://couriers.foursix46.com',  // add your custom domain too
+  'https://route46couriers.co.uk',       // ← add
+  'https://www.route46couriers.co.uk',   // ← add (this is what's being blocked)
 ];
 
 app.use(cors({
@@ -123,6 +122,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const paymentId   = session.metadata?.paymentId;
+    const bookingId = session.metadata?.bookingId;
     const payerName   = session.metadata?.name   || "N/A";
     const payerEmail  = session.metadata?.email  || "N/A";
     const reference   = session.metadata?.reference   || "N/A";
@@ -130,7 +130,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
     const netAmount   = session.metadata?.netAmount   || "N/A";
     const vatAmount   = session.metadata?.vatAmount   || "N/A";
 
-    if (paymentId) {
+    if (paymentId && !bookingId) {
       await db.collection('payments').doc(paymentId).update({
         status: 'paid',
         stripePaymentIntentId: session.payment_intent,
@@ -313,11 +313,27 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
         paymentHtml,
         "booking"
       );
-
       console.log(`📧 Payment notification sent to ${OPERATIONS_EMAIL} for payment ${paymentId}`);
 
       // -------------------------------------------------------
     }
+    // In webhook — bookingId block
+if (bookingId) {
+  const docRef = db.collection('bookings').doc(bookingId);
+  const doc = await docRef.get();
+
+  // ✅ Skip if frontend already confirmed it
+  if (doc.exists && doc.data()?.status === 'confirmed') {
+    console.log('⏭️ Booking already confirmed by frontend, skipping webhook:', bookingId);
+  } else {
+    await docRef.update({
+      status: 'confirmed',
+      stripePaymentIntentId: session.payment_intent,
+      paidAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log('✅ Booking confirmed via webhook:', bookingId);
+  }
+}
   }
 
   res.json({ received: true });
@@ -994,7 +1010,9 @@ app.post("/api/create-checkout-session", async (req, res) => {
       return_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
       customer_email: customerEmail,
       metadata: {
-        bookingId: bookingId
+        bookingId: bookingId,
+        paymentId: bookingId,   // ← ADD THIS so webhook can update the record
+        email: customerEmail,
       }
     });
 
@@ -1013,23 +1031,23 @@ app.post("/api/create-checkout-session", async (req, res) => {
  * @access  SECURE: Run this one time, then remove it.
  */
 // --- ONE-TIME ADMIN SETUP — DELETE AFTER USE ---
-app.post('/api/make-admin', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email is required.' });
+// app.post('/api/make-admin', async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     if (!email) return res.status(400).json({ message: 'Email is required.' });
 
-    const user = await admin.auth().getUserByEmail(email);
-    await admin.auth().setCustomUserClaims(user.uid, { admin: true });
+//     const user = await admin.auth().getUserByEmail(email);
+//     await admin.auth().setCustomUserClaims(user.uid, { admin: true });
 
-    return res.status(200).json({ 
-      message: `Success! ${email} is now an admin.`,
-      uid: user.uid
-    });
-  } catch (error) {
-    console.error('make-admin error:', error);
-    return res.status(500).json({ message: error.message });
-  }
-});
+//     return res.status(200).json({ 
+//       message: `Success! ${email} is now an admin.`,
+//       uid: user.uid
+//     });
+//   } catch (error) {
+//     console.error('make-admin error:', error);
+//     return res.status(500).json({ message: error.message });
+//   }
+// });
 // --- END ONE-TIME SETUP ---
 
 
@@ -1437,7 +1455,7 @@ const htmlContent = `
     // ✅ Signed URL (1 year)
     const [signedUrl] = await file.getSignedUrl({
       action: "read",
-      expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
     });
 
     console.log(
@@ -1745,33 +1763,6 @@ const htmlContent = `
   } catch (error) {
     console.error(`Error rejecting driver ${req.params.id}: `, error);
     res.status(500).json({ message: "Something went wrong while rejecting." });
-  }
-});
-
-/**
- * @route   POST /api/businesses/apply
- * @desc    Save new business registration data into Firestore
- */
-app.post("/api/businesses/apply", async (req, res) => {
-  try {
-    const businessData = req.body;
-
-    // Add default status and timestamp
-    const newRecord = {
-      ...businessData,
-      status: "pending", // or any initial status you prefer
-      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-
-    const docRef = await db.collection("businesses").add(newRecord);
-
-    res.status(201).json({
-      message: "Business registration submitted successfully!",
-      businessId: docRef.id,
-    });
-  } catch (error) {
-    console.error("Error saving business registration:", error);
-    res.status(500).json({ message: "Error processing registration" });
   }
 });
 
@@ -3081,40 +3072,43 @@ app.get("/api/invoices/:reference", async (req, res) => {
   }
 });
 
-app.post("/api/bookings/confirm-payment", async (req, res) => {
+// POST /api/payments/confirm-payment (frontend calls this)
+app.post('/api/payments/confirm-payment', async (req, res) => {
   try {
-    const { sessionId, bookingId } = req.body;
-    if (!sessionId || !bookingId) return res.status(400).json({ message: "Missing fields" });
-
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.payment_status === 'paid') {
-      const docRef = db.collection("bookings").doc(bookingId);
-      const doc = await docRef.get();
-      if (!doc.exists) return res.status(404).json({ message: "Booking not found" });
-
-      const bookingData = doc.data();
-      if (bookingData.status !== 'confirmed') {
-        const updateData = {
-          status: 'confirmed',
-          paymentIntentId: session.payment_intent,
-          stripeSessionId: session.id,
-          paymentMethodTypes: session.payment_method_types,
-          amountTotal: session.amount_total,
-          currency: session.currency,
-          paymentStatus: session.payment_status
-        };
-        await docRef.update(updateData);
-
-        // Merge updateData into bookingData for response
-        Object.assign(bookingData, updateData);
-      }
-      return res.json({ success: true, status: 'confirmed', booking: bookingData });
-    } else {
-      return res.status(400).json({ message: "Payment not completed" });
+    const { bookingId, sessionId } = req.body;
+    if (!bookingId || !sessionId) {
+      return res.status(400).json({ message: 'Missing bookingId or sessionId' });
     }
+
+    const docRef = db.collection('bookings').doc(bookingId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // ✅ IDEMPOTENCY CHECK — if already confirmed, skip silently
+    if (doc.data()?.status === 'confirmed') {
+      return res.status(200).json({ message: 'Already confirmed', bookingId });
+    }
+
+    // Verify session with Stripe before updating (important!)
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ message: 'Payment not completed' });
+    }
+
+    await docRef.update({
+      status: 'confirmed',
+      stripePaymentIntentId: session.payment_intent,
+      stripeSessionId: sessionId,
+      paidAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return res.status(200).json({ message: 'Booking confirmed', bookingId });
   } catch (error) {
-    console.error("Error confirming payment:", error);
-    res.status(500).json({ message: error.message });
+    console.error('confirm-payment error:', error);
+    return res.status(500).json({ message: 'Something went wrong' });
   }
 });
 /**
@@ -4028,124 +4022,92 @@ app.delete("/api/location-services/:id", async (req, res) => {
     });
   }
 });
-app.get("/sitemap.xml", async (req, res) => {
+app.get('/sitemap.xml', async (req, res) => {
   try {
+    const BASE_URL = process.env.BASE_URL || 'https://www.route46couriers.co.uk';
+    const today = new Date().toISOString().split('T')[0]; // 2026-04-03
 
-    const BASE_URL = process.env.BASE_URL || "https://www.route46couriers.co.uk";
-    const today = new Date().toISOString().split("T")[0];
+    // [url, changefreq, priority]
+    let urls = [
+      [BASE_URL,                    'weekly',  '1.0'],
+      [`${BASE_URL}/services`,      'weekly',  '0.8'],
+      [`${BASE_URL}/sectors`,       'weekly',  '0.8'],
+      [`${BASE_URL}/locations`,     'weekly',  '0.8'],
+      [`${BASE_URL}/blog`,          'weekly',  '0.7'],
+      [`${BASE_URL}/contact`,       'monthly', '0.6'],
+      [`${BASE_URL}/about`,         'monthly', '0.6'],
+      [`${BASE_URL}/become-driver`, 'monthly', '0.6'],
+      [`${BASE_URL}/become-shipper`,'monthly', '0.6'],
+    ];
 
-    // Each entry: { loc, lastmod, changefreq, priority }
-    let urls = [];
-
-    const u = (loc, changefreq = "monthly", priority = "0.5", lastmod = today) =>
-      urls.push({ loc, changefreq, priority, lastmod });
-
-    /* ===== STATIC ===== */
-    u(`${BASE_URL}`,                    "daily",   "1.0");
-    u(`${BASE_URL}/about`,              "monthly", "0.7");
-    u(`${BASE_URL}/contact`,            "monthly", "0.7");
-    u(`${BASE_URL}/services`,           "weekly",  "0.8");
-    u(`${BASE_URL}/sectors`,            "weekly",  "0.8");
-    u(`${BASE_URL}/locations`,          "weekly",  "0.8");
-    u(`${BASE_URL}/blog`,               "daily",   "0.8");
-    u(`${BASE_URL}/faqs`,               "monthly", "0.6");
-    u(`${BASE_URL}/for-businesses`,     "monthly", "0.7");
-    u(`${BASE_URL}/become-driver`,      "monthly", "0.7");
-    u(`${BASE_URL}/testimonials`,       "monthly", "0.6");
-    u(`${BASE_URL}/quick-quote`,        "monthly", "0.9");
-    u(`${BASE_URL}/accredited-trusted`, "monthly", "0.5");
-    u(`${BASE_URL}/rha-summary`,        "monthly", "0.5");
-    u(`${BASE_URL}/privacy`,            "yearly",  "0.3");
-    u(`${BASE_URL}/terms`,              "yearly",  "0.3");
-    u(`${BASE_URL}/cookies`,            "yearly",  "0.3");
-    u(`${BASE_URL}/refund-policy`,      "yearly",  "0.3");
-
-    /* ===== SERVICES ===== */
-    const services = await db.collection("services")
-      .where("status", "==", "published")
-      .get();
-
+    // Dynamic: Services
+    const services = await db.collection('services').where('status', '==', 'published').get();
     services.forEach(doc => {
       const data = doc.data();
-      if (!data.noindex && data.slug) {
-        const lastmod = data.updatedAt?.toDate?.()?.toISOString?.()?.split("T")?.[0] ?? today;
-        u(`${BASE_URL}/services/${data.slug}`, "weekly", "0.8", lastmod);
+      if (!data.noindex) {
+        const lastmod = data.updatedAt?.toDate?.()?.toISOString().split('T')[0] || today;
+        urls.push([`${BASE_URL}/services/${data.slug}`, 'weekly', '0.8', lastmod]);
       }
     });
 
-    /* ===== SECTORS ===== */
-    const sectors = await db.collection("sectors")
-      .where("status", "==", "published")
-      .get();
-
+    // Dynamic: Sectors
+    const sectors = await db.collection('sectors').where('status', '==', 'published').get();
     sectors.forEach(doc => {
       const data = doc.data();
-      if (!data.noindex && data.slug) {
-        const lastmod = data.updatedAt?.toDate?.()?.toISOString?.()?.split("T")?.[0] ?? today;
-        u(`${BASE_URL}/sectors/${data.slug}`, "weekly", "0.7", lastmod);
+      if (!data.noindex) {
+        const lastmod = data.updatedAt?.toDate?.()?.toISOString().split('T')[0] || today;
+        urls.push([`${BASE_URL}/sectors/${data.slug}`, 'weekly', '0.7', lastmod]);
       }
     });
 
-    /* ===== LOCATIONS ===== */
-    const locations = await db.collection("locations")
-      .where("status", "==", "published")
-      .get();
-
+    // Dynamic: Locations
+    const locations = await db.collection('locations').where('status', '==', 'published').get();
     locations.forEach(doc => {
       const data = doc.data();
-      if (!data.noindex && data.slug) {
-        const lastmod = data.updatedAt?.toDate?.()?.toISOString?.()?.split("T")?.[0] ?? today;
-        u(`${BASE_URL}/locations/${data.slug}`, "weekly", "0.8", lastmod);
+      if (!data.noindex) {
+        const lastmod = data.updatedAt?.toDate?.()?.toISOString().split('T')[0] || today;
+        urls.push([`${BASE_URL}/locations/${data.slug}`, 'weekly', '0.7', lastmod]);
       }
     });
 
-    /* ===== LANDING PAGES ===== */
-    const landings = await db.collection("locationServicePages")
-      .where("status", "==", "published")
-      .get();
-
+    // Dynamic: Location+Service Landing Pages
+    const landings = await db.collection('locationServicePages').where('status', '==', 'published').get();
     landings.forEach(doc => {
       const data = doc.data();
-      if (!data.noindex && data.locationSlug && data.serviceSlug) {
-        const lastmod = data.updatedAt?.toDate?.()?.toISOString?.()?.split("T")?.[0] ?? today;
-        u(`${BASE_URL}/locations/${data.locationSlug}/${data.serviceSlug}`, "weekly", "0.8", lastmod);
+      if (!data.noindex) {
+        const lastmod = data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : today;
+        urls.push([`${BASE_URL}/locations/${data.locationSlug}/${data.serviceSlug}`, 'weekly', '0.6', lastmod]);
       }
     });
 
-    /* ===== BLOG POSTS ===== */
-    const blogPosts = await db.collection("blogPosts")
-      .where("status", "==", "published")
-      .get();
-
+    // Dynamic: Blog Posts
+    const blogPosts = await db.collection('blogPosts').where('status', '==', 'published').get();
     blogPosts.forEach(doc => {
       const data = doc.data();
-      if (!data.noindex && data.slug) {
-        const lastmod = data.updatedAt?.toDate?.()?.toISOString?.()?.split("T")?.[0] ??
-                        data.publishedDate ?? today;
-        u(`${BASE_URL}/blog/${data.slug}`, "weekly", "0.7", lastmod);
+      if (!data.noindex) {
+        const lastmod = data.updatedAt?.toDate?.()?.toISOString().split('T')[0] || today;
+        urls.push([`${BASE_URL}/blog/${data.slug}`, 'monthly', '0.6', lastmod]);
       }
     });
 
-    /* ===== BUILD XML ===== */
-    const xml =
-`<?xml version="1.0" encoding="UTF-8"?>
+    // Build XML
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(({ loc, lastmod, changefreq, priority }) => `
-  <url>
+${urls.map(([loc, changefreq, priority, lastmod]) => `  <url>
     <loc>${loc}</loc>
-    <lastmod>${lastmod}</lastmod>
+    <lastmod>${lastmod || today}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
-  </url>`).join("")}
+  </url>`).join('\n')}
 </urlset>`;
 
-    res.set("Content-Type", "application/xml");
-    res.set("Cache-Control", "public, max-age=3600"); // cache 1 hour
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // cache 1 hour
     res.status(200).send(xml);
 
   } catch (error) {
-    console.error("Sitemap error:", error);
-    res.status(500).send("Sitemap generation failed");
+    console.error('Sitemap error:', error);
+    res.status(500).send('Sitemap generation failed');
   }
 });
 app.post("/api/faqs", async (req, res) => {
@@ -4425,15 +4387,99 @@ const ownerHtml = `
 </html>
 `;
 
-if (OWNER_EMAIL) {
-  await sendApplicationEmail(
-    OWNER_EMAIL,
-    "FourSix46 Admin",
-    subject,
-    ownerHtml,
-    "booking"
-  );
-}
+// FIXED — correct recipient + simplified template
+const QUOTES_EMAIL = "quotes@route46couriers.co.uk";
+
+const quoteSubject = `New Quote Request`;
+
+const quoteHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Quote Request</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Verdana,sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td align="center" style="padding:40px 10px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="560" style="background:#fff;border-radius:10px;border-top:4px solid #134467;border:1px solid #edf2f7;box-shadow:0 4px 16px rgba(0,0,0,0.05);">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding:28px 40px 0;">
+              <h1 style="margin:0;font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;">
+                <span style="color:#48AEDD;">Route</span><span style="color:#E53935;">46</span>
+              </h1>
+              <p style="margin:4px 0 0;font-size:11px;color:#134467;text-transform:uppercase;letter-spacing:2px;font-weight:600;">Couriers</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px 40px 32px;">
+
+              <!-- Badge -->
+              <span style="display:inline-block;background:#FFF3CD;color:#856404;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 12px;border-radius:20px;margin-bottom:16px;">
+                Internal Notification
+              </span>
+
+              <h2 style="margin:0 0 6px;font-size:19px;font-weight:800;color:#134467;">New Quote Request</h2>
+              <p style="margin:0 0 24px;font-size:13px;color:#94a3b8;">New quote request received.</p>
+
+              <hr style="border:none;border-top:1px solid #eee;margin:0 0 20px;">
+
+              <!-- Details -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:13px;color:#555;padding:5px 0;width:130px;">Name</td>
+                  <td style="font-size:13px;color:#222;font-weight:600;">${quickQuote.contact.name}</td>
+                </tr>
+                <tr>
+                  <td style="font-size:13px;color:#555;padding:5px 0;">Phone</td>
+                  <td style="font-size:13px;color:#222;font-weight:600;">${quickQuote.contact.phone}</td>
+                </tr>
+              </table>
+
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:13px;color:#555;padding:5px 0;width:130px;">Submitted At</td>
+                  <td style="font-size:13px;color:#222;font-weight:600;">${submittedAt}</td>
+                </tr>
+              </table>
+
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+
+              <!-- CTA note -->
+              <div style="background:#f0f7ff;border-radius:8px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#134467;font-weight:600;">
+                  Please check the backend for full details and follow up.
+                </p>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:0 20px 24px;font-size:11px;color:#94a3b8;line-height:1.7;">
+              <strong style="color:#134467;">Route46 Couriers</strong> – Internal Notification<br/>
+              A trading brand of FourSix46&reg; Global Ltd &nbsp;&bull;&nbsp; 66 Paul Street, London, EC2A 4NA<br/>
+              &copy; ${new Date().getFullYear()} FourSix46 Global Ltd. All rights reserved.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+await sendApplicationEmail(QUOTES_EMAIL, "Route46 Quotes Team", quoteSubject, quoteHtml, "booking");
 
     res.status(201).json({
       message: "Quick quote submitted successfully.",
@@ -5905,19 +5951,51 @@ app.put("/api/blog-index", async (req, res) => {
   }
 });
 
+/* ── GET /api/settings/vat ── */
+app.get("/api/settings/vat", async (req, res) => {
+  try {
+    const snap = await db.doc("settings/vat").get();
+    if (!snap.exists) return res.json({ vatEnabled: true, vatRate: 20 });
+    return res.json(snap.data());
+  } catch (err) {
+    console.error("[VAT GET]", err);
+    return res.status(500).json({ message: "Failed to load VAT settings." });
+  }
+});
+
+/* ── POST /api/settings/vat ── */
+app.post("/api/settings/vat", async (req, res) => {
+  try {
+    const { vatEnabled, vatRate } = req.body;
+
+    if (typeof vatEnabled !== "boolean")
+      return res.status(400).json({ message: "vatEnabled must be a boolean." });
+
+    if (typeof vatRate !== "number" || vatRate < 0 || vatRate > 100)
+      return res.status(400).json({ message: "vatRate must be a number between 0 and 100." });
+
+    await db.doc("settings/vat").set(
+      { vatEnabled, vatRate, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+
+    return res.json({ success: true, vatEnabled, vatRate });
+  } catch (err) {
+    console.error("[VAT POST]", err);
+    return res.status(500).json({ message: "Failed to save VAT settings." });
+  }
+});
+
 
 
 // === START SERVER (Local Development Only) ===
 // Only start server if not running on Vercel (serverless)
 // Vercel will handle the serverless function execution
-if (process.env.VERCEL !== "1" && !process.env.VERCEL_ENV) {
+if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Backend server is running on http://localhost:${PORT}`);
   });
-} else {
-  console.log("✅ Running on Vercel - serverless mode");
 }
 
-// Export app for Vercel serverless function (must be at the end, after all routes)
 module.exports = app;
