@@ -708,6 +708,7 @@ import {
   Facebook,
   MessageCircle,
   BookOpen,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -775,6 +776,12 @@ const legalItems = [
     label: "Accredited & Trusted",
     icon: FileCheck,
     path: "/accredited-trusted",
+  },
+  {
+    id: "payments",
+    label: "Secure Payment Portal",
+    icon: CreditCard,
+    path: "/pay",
   },
 ];
 

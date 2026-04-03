@@ -551,7 +551,7 @@ const App = () => (
             />
           </Routes>
 
-          <Chatbot />
+          {/* <Chatbot /> */}
         </BrowserRouter>
       </HelmetProvider>
     </TooltipProvider>

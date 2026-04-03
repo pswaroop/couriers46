@@ -42,7 +42,7 @@ const faqData: FAQCategory[] = [
       {
         question: "What is Route46 Couriers?",
         answer:
-          "Route46 Couriers is a UK-based same-day and express delivery service operated by Route46 Global Ltd, transporting goods across the UK mainland under the RHA Conditions of Carriage 2024.",
+          "Route46 Couriers is a UK-based same-day and express delivery service operated by FourSix46&reg; Global Ltd, transporting goods across the UK mainland under the RHA Conditions of Carriage 2024.",
         keywords: [
           "who",
           "what",

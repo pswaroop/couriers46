@@ -3,6 +3,10 @@
     {
       "source": "/((?!api/|.*\\..*).*)",
       "destination": "/index.html"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://europe-west2-foursix46-production-4a43f.cloudfunctions.net/api/sitemap.xml"
     }
   ],
   "headers": [
