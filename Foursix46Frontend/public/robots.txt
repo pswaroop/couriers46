@@ -1,16 +1,18 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+
+# Block admin and private routes
+Disallow: /admin/
+Disallow: /admin/login
+Disallow: /admin/dashboard
+Disallow: /pay/success
+Disallow: /pay/cancel
+
+# Block thank-you pages (no SEO value, avoid duplicate signals)
+Disallow: /driver-thank-you
+Disallow: /shipper-thank-you
+Disallow: /contact-thank-you
+Disallow: /booking-thank-you
+Disallow: /get-a-quote/thank-you
 
 Sitemap: https://www.route46couriers.co.uk/sitemap.xml
