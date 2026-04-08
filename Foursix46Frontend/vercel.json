@@ -7,12 +7,16 @@
       "destination": "https://europe-west2-foursix46-production-4a43f.cloudfunctions.net/api/sitemap.xml"
     },
     {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/admin/(.*)",
       "destination": "/index.html"
     },
     {
       "source": "/((?!api/|assets/|.*\\..*).*)",
-      "destination": "/$1.html"
+      "destination": "/index.html"
     }
   ],
   "headers": [
