@@ -120,7 +120,6 @@ export default defineConfig(({ mode }) => ({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    // Deduplicate to guarantee a single instance across all bundles
     dedupe: [
       'react',
       'react-dom',
@@ -129,28 +128,23 @@ export default defineConfig(({ mode }) => ({
     ],
   },
 
-  // Bundle CJS packages instead of externalizing — prevents Node ESM named-export errors
   ssr: {
-    noExternal: [
-      'react-helmet-async',
-    ],
+    noExternal: ['react-helmet-async'],
   },
 
-  // ── SSG Options ───────────────────────────────────────────────────────────
   ssgOptions: {
     script: 'async',
     formatting: 'none',
     includedRoutes: async (paths: string[]) => {
       try {
         const [services, sectors, locations, landings, blogs] = await Promise.all([
-          fetch(`${API_URL}/api/services`).then(r => r.json()).catch(() => ({ data: [] })),
-          fetch(`${API_URL}/api/sectors`).then(r => r.json()).catch(() => ({ data: [] })),
-          fetch(`${API_URL}/api/locations`).then(r => r.json()).catch(() => ({ data: [] })),
-          fetch(`${API_URL}/api/location-services`).then(r => r.json()).catch(() => ({ data: [] })),
-          fetch(`${API_URL}/api/blog`).then(r => r.json()).catch(() => ({ data: [] })),
+          fetch(`${API_URL}/api/services`).then(r => r.json()).catch(() => []),
+          fetch(`${API_URL}/api/sectors`).then(r => r.json()).catch(() => []),
+          fetch(`${API_URL}/api/locations`).then(r => r.json()).catch(() => []),
+          fetch(`${API_URL}/api/location-services`).then(r => r.json()).catch(() => []),
+          fetch(`${API_URL}/api/blog`).then(r => r.json()).catch(() => []),
         ])
 
-        // Normalise all possible API shapes: [], { data: [] }, { data: { data: [] } }
         const toArr = (res: any): any[] => {
           if (Array.isArray(res)) return res
           if (res?.data && Array.isArray(res.data)) return res.data
@@ -158,43 +152,20 @@ export default defineConfig(({ mode }) => ({
           return []
         }
 
-        // Only keep slugs that are non-empty plain strings (no slashes, no spaces)
         const validSlug = (s: any): s is string =>
           typeof s === 'string' && s.length > 0 && !s.includes('/')
 
-        const serviceRoutes = toArr(services)
-          .filter(s => validSlug(s.slug))
-          .map(s => `/services/${s.slug}`)
-
-        const sectorRoutes = toArr(sectors)
-          .filter(s => validSlug(s.slug))
-          .map(s => `/sectors/${s.slug}`)
-
-        const locationRoutes = toArr(locations)
-          .filter(l => validSlug(l.slug))
-          .map(l => `/locations/${l.slug}`)
-
-        const landingRoutes = toArr(landings)
-          .filter(l => validSlug(l.locationSlug) && validSlug(l.serviceSlug))
-          .map(l => `/locations/${l.locationSlug}/${l.serviceSlug}`)
-
-        const blogRoutes = toArr(blogs)
-          .filter(b => validSlug(b.slug))
-          .map(b => `/blog/${b.slug}`)
-
         const allRoutes = [
           ...paths,
-          ...serviceRoutes,
-          ...sectorRoutes,
-          ...locationRoutes,
-          ...landingRoutes,
-          ...blogRoutes,
+          ...toArr(services).filter(s => validSlug(s.slug)).map(s => `/services/${s.slug}`),
+          ...toArr(sectors).filter(s => validSlug(s.slug)).map(s => `/sectors/${s.slug}`),
+          ...toArr(locations).filter(l => validSlug(l.slug)).map(l => `/locations/${l.slug}`),
+          ...toArr(landings).filter(l => validSlug(l.locationSlug) && validSlug(l.serviceSlug)).map(l => `/locations/${l.locationSlug}/${l.serviceSlug}`),
+          ...toArr(blogs).filter(b => validSlug(b.slug)).map(b => `/blog/${b.slug}`),
         ]
 
-        // Deduplicate and strip any empty/undefined entries
         const unique = [...new Set(allRoutes.filter(Boolean))]
-
-        console.log(`[SSG] Total routes to render: ${unique.length}`)
+        console.log(`[SSG] Routes to render: ${unique.length}`)
         return unique
       } catch (err) {
         console.error('[SSG] Failed to fetch dynamic routes:', err)
@@ -210,17 +181,9 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (
-            id.includes('node_modules/react') ||
-            id.includes('node_modules/react-dom') ||
-            id.includes('node_modules/react-router')
-          ) return 'react-vendor'
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) return 'react-vendor'
           if (id.includes('node_modules/@radix-ui')) return 'ui-vendor'
-          if (
-            id.includes('node_modules/react-hook-form') ||
-            id.includes('node_modules/zod') ||
-            id.includes('node_modules/@hookform')
-          ) return 'form-vendor'
+          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/zod') || id.includes('node_modules/@hookform')) return 'form-vendor'
           if (id.includes('node_modules/framer-motion')) return 'animation-vendor'
           if (id.includes('node_modules/lucide-react')) return 'icons-vendor'
           if (id.includes('node_modules/firebase')) return 'firebase-vendor'
@@ -229,12 +192,8 @@ export default defineConfig(({ mode }) => ({
         },
         assetFileNames: (assetInfo) => {
           if (!assetInfo.name) return 'assets/[name]-[hash][extname]'
-          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) {
-            return 'assets/images/[name]-[hash][extname]'
-          }
-          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
-            return 'assets/fonts/[name]-[hash][extname]'
-          }
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) return 'assets/images/[name]-[hash][extname]'
+          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) return 'assets/fonts/[name]-[hash][extname]'
           return 'assets/[name]-[hash][extname]'
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -246,12 +205,6 @@ export default defineConfig(({ mode }) => ({
   },
 
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'lucide-react',
-      'framer-motion',
-    ],
+    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react', 'framer-motion'],
   },
 }))
