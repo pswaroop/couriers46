@@ -842,7 +842,7 @@ else if (currentStep === 3) {
                           onChange={(e) => {
                             const file = e.target.files?.[0] || null;
                             if (file) {
-                              const maxSize = 1 * 1024 * 1024; // 1MB
+                              const maxSize = 5 * 1024 * 1024; // 1MB
                               if (file.size > maxSize) {
                                 toast.error(
                                   `Driving License is too large (${(
@@ -916,7 +916,7 @@ else if (currentStep === 3) {
                             const file = e.target.files?.[0] || null;
 
                             if (file) {
-                              const maxSize = 1 * 1024 * 1024; // 1MB
+                              const maxSize = 5 * 1024 * 1024; // 1MB
                               if (file.size > maxSize) {
                                 toast.error(
                                   `Vehicle Insurance is too large (${(
@@ -985,7 +985,7 @@ else if (currentStep === 3) {
                             const file = e.target.files?.[0] || null;
 
                             if (file) {
-                              const maxSize = 1 * 1024 * 1024; // 1MB
+                              const maxSize = 5 * 1024 * 1024; // 1MB
                               if (file.size > maxSize) {
                                 toast.error(
                                   `Public Liability Insurance is too large (${(
@@ -1054,7 +1054,7 @@ else if (currentStep === 3) {
                             const file = e.target.files?.[0] || null;
 
                             if (file) {
-                              const maxSize = 1 * 1024 * 1024; // 1MB
+                              const maxSize = 5 * 1024 * 1024; // 1MB
                               if (file.size > maxSize) {
                                 toast.error(
                                   `Goods In Transit Insurance is too large (${(
@@ -1194,7 +1194,7 @@ else if (currentStep === 3) {
                         onChange={(e) => {
                           const file = e.target.files?.[0] || null;
                           if (file) {
-                            const maxSize = 1 * 1024 * 1024; // 1MB
+                            const maxSize = 5 * 1024 * 1024; // 1MB
                             if (file.size > maxSize) {
                               toast.error(
                                 `Right to Work document is too large (${(
