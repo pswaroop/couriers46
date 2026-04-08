@@ -150,6 +150,11 @@ export default defineConfig(({ mode }) => ({
       }
     },
   },
+  ssr: {
+    noExternal: [
+      'react-helmet-async',
+    ],
+  },
 
   build: {
     minify: 'esbuild',
