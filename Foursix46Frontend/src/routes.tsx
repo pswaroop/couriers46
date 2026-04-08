@@ -70,8 +70,15 @@ export const routes: RouteRecord[] = [
       {
         Component: AdminLayout,
         children: [
-          { path: "admin/login", element: s(AdminLoginPage) },
-          { path: "admin/dashboard", element: s(AdminDashboardPage) },
+          {
+            path: "admin/login",
+            element: typeof window !== "undefined" ? s(AdminLoginPage) : null,
+          },
+          {
+            path: "admin/dashboard",
+            element:
+              typeof window !== "undefined" ? s(AdminDashboardPage) : null,
+          },
         ],
       },
 

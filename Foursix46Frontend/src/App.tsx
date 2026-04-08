@@ -707,15 +707,19 @@ export const FullBleedLayout = () => (
 );
 
 // ── Admin Layout ──────────────────────────────────────────────────────────────
-export const AdminLayout = () => (
-  <PageErrorBoundary>
-    <div className="min-h-screen bg-gray-100">
-      <Suspense fallback={<PageLoader />}>
-        <Outlet />
-      </Suspense>
-    </div>
-  </PageErrorBoundary>
-);
+export const AdminLayout = () => {
+  if (typeof window === "undefined") return null; // ⛔ STOP SSR
+
+  return (
+    <PageErrorBoundary>
+      <div className="min-h-screen bg-gray-100">
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
+      </div>
+    </PageErrorBoundary>
+  );
+};
 
 // Default export kept for any legacy import references
 export default RootLayout;
