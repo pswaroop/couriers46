@@ -11,46 +11,37 @@ if (!fs.existsSync(helmetPkgPath)) {
 }
 
 const pkg = JSON.parse(fs.readFileSync(helmetPkgPath, 'utf8'))
+const wrapperPath = path.join(helmetDir, 'lib', 'index.esm-node.js')
 
-// Already patched
-if (pkg.exports?.['.']?.import?.includes('esm-node')) {
-  console.log('[patch-helmet] Already patched, skipping')
-  process.exit(0)
-}
-
-// Determine the CJS entry point
-const cjsEntry = pkg.main || './lib/index.js'
-// Resolve it relative to the lib/ folder the wrapper will live in
-const relCjs = cjsEntry.startsWith('./lib/')
-  ? cjsEntry.replace('./lib/', './')    // wrapper is inside lib/ → same dir
-  : '../' + cjsEntry.replace('./', '') // wrapper is inside lib/ but main isn't
-
-// Create an ESM wrapper using createRequire — the only reliable way to
-// re-export CJS named exports as ESM in Node.js v18+
-const esmWrapper = `
-// Auto-generated ESM wrapper for react-helmet-async
-// Needed because the package ships CJS-only and lacks an exports.import field.
+// ESM wrapper using createRequire — valid ONLY in Node.js, not in browsers
+const esmWrapper = `// Auto-generated ESM wrapper (Node.js context only)
 import { createRequire } from 'module';
 const _require = createRequire(import.meta.url);
-const _pkg = _require('${relCjs}');
+const _pkg = _require('./index.js');
 export const Helmet         = _pkg.Helmet;
 export const HelmetProvider = _pkg.HelmetProvider;
 export const HelmetData     = _pkg.HelmetData;
 export const FilledContext  = _pkg.FilledContext;
 export default _pkg;
-`.trimStart()
+`
 
-const wrapperPath = path.join(helmetDir, 'lib', 'index.esm-node.js')
 fs.writeFileSync(wrapperPath, esmWrapper)
 
-// Patch exports in package.json
+// Use NESTED `node` condition so only Node.js picks up the ESM wrapper.
+// Vite/Rollup (browser + SSR builds) do NOT activate the `node` condition —
+// they fall through to `import`/`default` which point to the plain CJS file.
+// Vite handles CJS→ESM transformation internally via @rollup/plugin-commonjs.
 pkg.exports = {
   '.': {
-    import:  './lib/index.esm-node.js',
-    require: cjsEntry,
-    default: cjsEntry,
+    node: {
+      import:  './lib/index.esm-node.js', // ← vite-react-ssg SSG tool (Node.js ESM)
+      require: './lib/index.js',
+    },
+    import:  './lib/index.js', // ← Vite browser build falls here (CJS, Rollup handles it)
+    require: './lib/index.js',
+    default: './lib/index.js',
   },
 }
 
 fs.writeFileSync(helmetPkgPath, JSON.stringify(pkg, null, 2))
-console.log('[patch-helmet] ✅ Patched react-helmet-async with ESM wrapper')
+console.log('[patch-helmet] ✅ Patched react-helmet-async with node-scoped ESM wrapper')
