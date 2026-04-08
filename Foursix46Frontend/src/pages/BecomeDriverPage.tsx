@@ -254,40 +254,118 @@ export default function BecomeDriverPage() {
       }
     }
 
-    // STEP 3
-    else if (currentStep === 3) {
-      isValid = await form.trigger(step3Fields);
-      fieldsValidated = isValid;
+    // STEP 3 — submit
+else if (currentStep === 3) {
+  isValid = await form.trigger(step3Fields);
+  fieldsValidated = isValid;
 
-      if (isValid && !isSubmitting && !submitted) {
-        setIsSubmitting(true);
+  if (isValid && !isSubmitting && !submitted) {
+    setIsSubmitting(true);
+    try {
+      const allData = form.getValues();
+      allData.utrNumber = allData.utrNumber.replace(/\s/g, '');
 
-        try {
-          const allData = form.getValues();
-          allData.utrNumber = allData.utrNumber.replace(/\s/g, "");
+      // ── Step A: Submit form data → get driverId back ──────────────────
+      const applyRes = await fetch(`${apiUrl}/api/drivers/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(allData),
+      });
+      const applyResult = await applyRes.json();
+      if (!applyRes.ok) throw new Error(applyResult.message || 'Failed to submit application.');
 
-          const response = await fetch(`${apiUrl}/api/drivers/apply`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(allData),
-          });
+      const driverId = applyResult.driverId;
 
-          const result = await response.json();
+      // ── Step B: Upload each file to backend ───────────────────────────
+      const fileMap: Record<string, File | null> = {
+        drivingLicense: selectedFiles.drivingLicense,
+        vehicleInsurance: selectedFiles.vehicleInsurance,
+        publicLiabilityInsurance: selectedFiles.publicLiabilityInsurance,
+        goodsInTransitInsurance: selectedFiles.goodsInTransitInsurance,
+        rightToWorkDoc: selectedFiles.rightToWorkDoc,
+      };
 
-          if (!response.ok) {
-            throw new Error(result.message || "Failed to submit application.");
-          }
+      const uploadedUrls: Record<string, string> = {};
 
-          toast.success("Driver application submitted successfully!");
-          setSubmitted(true);
-          setTimeout(() => navigate("/driver-thank-you"), 1500);
-        } catch (error: any) {
-          console.error("Submission Error:", error);
-          toast.error(error.message || "Submission failed.");
-          setIsSubmitting(false);
-        }
+      for (const [fieldName, file] of Object.entries(fileMap)) {
+        if (!file) continue;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('fieldName', fieldName);
+
+        const uploadRes = await fetch(`${apiUrl}/api/drivers/${driverId}/upload-file`, {
+          method: 'POST',
+          body: formData, // ← multipart, no Content-Type header needed
+        });
+        const uploadResult = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(`Failed to upload ${fieldName}: ${uploadResult.message}`);
+
+        uploadedUrls[fieldName] = uploadResult.url; // signed URL returned by backend
       }
+
+      // ── Step C: Save all URLs to Firestore via /files endpoint ────────
+      const filesRes = await fetch(`${apiUrl}/api/drivers/${driverId}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          drivingLicenseUrl: uploadedUrls.drivingLicense,
+          rightToWorkDocUrl: uploadedUrls.rightToWorkDoc,
+          vehicleInsuranceUrl: uploadedUrls.vehicleInsurance,
+          publicLiabilityInsuranceUrl: uploadedUrls.publicLiabilityInsurance,
+          goodsInTransitInsuranceUrl: uploadedUrls.goodsInTransitInsurance,
+        }),
+      });
+      const filesResult = await filesRes.json();
+      if (!filesRes.ok) throw new Error(filesResult.message || 'Failed to save document URLs.');
+
+      toast.success('Driver application submitted successfully!');
+      setSubmitted(true);
+      setTimeout(() => navigate('/driver-thank-you'), 1500);
+
+    } catch (error: any) {
+      console.error('Submission Error:', error);
+      toast.error(error.message || 'Submission failed.');
+    } finally {
+      setIsSubmitting(false);
     }
+  }
+}
+
+    // STEP 3
+    // else if (currentStep === 3) {
+    //   isValid = await form.trigger(step3Fields);
+    //   fieldsValidated = isValid;
+
+    //   if (isValid && !isSubmitting && !submitted) {
+    //     setIsSubmitting(true);
+
+    //     try {
+    //       const allData = form.getValues();
+    //       allData.utrNumber = allData.utrNumber.replace(/\s/g, "");
+
+    //       const response = await fetch(`${apiUrl}/api/drivers/apply`, {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify(allData),
+    //       });
+
+    //       const result = await response.json();
+
+    //       if (!response.ok) {
+    //         throw new Error(result.message || "Failed to submit application.");
+    //       }
+
+    //       toast.success("Driver application submitted successfully!");
+    //       setSubmitted(true);
+    //       setTimeout(() => navigate("/driver-thank-you"), 1500);
+    //     } catch (error: any) {
+    //       console.error("Submission Error:", error);
+    //       toast.error(error.message || "Submission failed.");
+    //       setIsSubmitting(false);
+    //     }
+    //   }
+    // }
 
     if (!fieldsValidated) {
       toast.error("Please check the form for errors and try again.");
