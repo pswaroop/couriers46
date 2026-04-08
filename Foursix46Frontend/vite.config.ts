@@ -119,28 +119,23 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Point Vite (browser + SSR builds) directly at the CJS file.
-      // This takes priority over the patched exports field, so Rollup
-      // handles CJS→ESM transformation and never sees the createRequire wrapper.
+      // Point Vite's browser + SSR builds at the plain CJS file.
+      // resolve.alias bypasses the exports field, so Rollup handles
+      // CJS→ESM and never sees the Node-only createRequire wrapper.
       'react-helmet-async': path.resolve(
         __dirname,
         'node_modules/react-helmet-async/lib/index.js'
       ),
     },
-    // Guarantee a single instance of these across all bundles
-    dedupe: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'react-helmet-async',
-    ],
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
   },
 
-  // Bundle CJS packages into the SSR output rather than externalizing them.
-  // Prevents Node.js v24 ESM named-export errors in the Vite SSR temp bundle.
-  ssr: {
-    noExternal: ['react-helmet-async'],
-  },
+  // ── ssr.noExternal is intentionally OMITTED for react-helmet-async ────────
+  // Externalising it means the SSR temp bundle does a real Node.js import at
+  // runtime → resolves via exports.node.import → same createRequire wrapper →
+  // same require-cached CJS instance as vite-react-ssg's HelmetProvider.
+  // Both share the same React context. Bundling them separately (noExternal)
+  // creates two distinct instances → HelmetDispatcher context is undefined.
 
   ssgOptions: {
     script: 'async',
@@ -155,7 +150,6 @@ export default defineConfig(({ mode }) => ({
           fetch(`${API_URL}/api/blog`).then(r => r.json()).catch(() => []),
         ])
 
-        // Normalise all possible API shapes: [], { data: [] }, { data: { data: [] } }
         const toArr = (res: any): any[] => {
           if (Array.isArray(res)) return res
           if (res?.data && Array.isArray(res.data)) return res.data
@@ -163,9 +157,14 @@ export default defineConfig(({ mode }) => ({
           return []
         }
 
-        // Guard against malformed/doubled slugs (no slashes, no empty strings)
+        // Valid slug: non-empty, no slashes, only url-safe chars, max 50 chars
+        // Filters out malformed entries like "same-day-couriersame-day-courier"
         const validSlug = (s: any): s is string =>
-          typeof s === 'string' && s.length > 0 && !s.includes('/')
+          typeof s === 'string' &&
+          s.length > 0 &&
+          s.length <= 50 &&
+          !s.includes('/') &&
+          /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s)
 
         const allRoutes = [
           ...paths,
@@ -178,7 +177,6 @@ export default defineConfig(({ mode }) => ({
           ...toArr(blogs).filter(b => validSlug(b.slug)).map(b => `/blog/${b.slug}`),
         ]
 
-        // Deduplicate and strip any empty/undefined entries
         const unique = [...new Set(allRoutes.filter(Boolean))]
         console.log(`[SSG] Routes to render: ${unique.length}`)
         return unique
@@ -215,12 +213,8 @@ export default defineConfig(({ mode }) => ({
         },
         assetFileNames: (assetInfo) => {
           if (!assetInfo.name) return 'assets/[name]-[hash][extname]'
-          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) {
-            return 'assets/images/[name]-[hash][extname]'
-          }
-          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
-            return 'assets/fonts/[name]-[hash][extname]'
-          }
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) return 'assets/images/[name]-[hash][extname]'
+          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) return 'assets/fonts/[name]-[hash][extname]'
           return 'assets/[name]-[hash][extname]'
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -232,12 +226,6 @@ export default defineConfig(({ mode }) => ({
   },
 
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'lucide-react',
-      'framer-motion',
-    ],
+    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react', 'framer-motion'],
   },
 }))
