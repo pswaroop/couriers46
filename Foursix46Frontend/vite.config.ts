@@ -119,7 +119,28 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // ── Force vite-react-ssg to use the project's own react-helmet-async
+      //    instead of its internal nested copy — prevents dual-instance crash ──
+      'react-helmet-async': path.resolve(
+        __dirname,
+        'node_modules/react-helmet-async',
+      ),
     },
+    // ── Deduplicate to guarantee a single instance across all bundles ──
+    dedupe: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'react-helmet-async',
+    ],
+  },
+
+  // ── SSR/SSG: bundle CJS packages instead of externalizing them ────────────
+  // Prevents "Named export not found" errors for CommonJS modules in Node ESM
+  ssr: {
+    noExternal: [
+      'react-helmet-async',
+    ],
   },
 
   // ── SSG Options ───────────────────────────────────────────────────────────
@@ -136,24 +157,29 @@ export default defineConfig(({ mode }) => ({
           fetch(`${API_URL}/api/blog`).then(r => r.json()).catch(() => []),
         ])
 
-        return [
+        // ── Normalise API responses — handles both [] and { data: [] } shapes ──
+        const toArr = (res: any): any[] => {
+          if (Array.isArray(res)) return res
+          if (res && Array.isArray(res.data)) return res.data
+          return []
+        }
+
+        const allRoutes = [
           ...paths,
-          ...( Array.isArray(services) ? services.map((s: any) => `/services/${s.slug}`) : []),
-          ...( Array.isArray(sectors)  ? sectors.map((s: any)  => `/sectors/${s.slug}`)  : []),
-          ...( Array.isArray(locations) ? locations.map((l: any) => `/locations/${l.slug}`) : []),
-          ...( Array.isArray(landings) ? landings.map((l: any)  => `/locations/${l.locationSlug}/${l.serviceSlug}`) : []),
-          ...( Array.isArray(blogs)    ? blogs.map((b: any)     => `/blog/${b.slug}`) : []),
+          ...toArr(services).map((s: any)  => `/services/${s.slug}`),
+          ...toArr(sectors).map((s: any)   => `/sectors/${s.slug}`),
+          ...toArr(locations).map((l: any) => `/locations/${l.slug}`),
+          ...toArr(landings).map((l: any)  => `/locations/${l.locationSlug}/${l.serviceSlug}`),
+          ...toArr(blogs).map((b: any)     => `/blog/${b.slug}`),
         ]
+
+        // ── Deduplicate and strip any empty/undefined routes ──
+        return [...new Set(allRoutes.filter(Boolean))]
       } catch (err) {
-        console.error('SSG: Failed to fetch routes', err)
-        return paths // fallback to static routes only
+        console.error('[SSG] Failed to fetch dynamic routes:', err)
+        return paths
       }
     },
-  },
-  ssr: {
-    noExternal: [
-      'react-helmet-async',
-    ],
   },
 
   build: {
@@ -163,30 +189,22 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
-            return 'react-vendor'
-          }
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'ui-vendor'
-          }
-          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/zod') || id.includes('node_modules/@hookform')) {
-            return 'form-vendor'
-          }
-          if (id.includes('node_modules/framer-motion')) {
-            return 'animation-vendor'
-          }
-          if (id.includes('node_modules/lucide-react')) {
-            return 'icons-vendor'
-          }
-          if (id.includes('node_modules/firebase')) {
-            return 'firebase-vendor'
-          }
-          if (id.includes('node_modules/@stripe')) {
-            return 'stripe-vendor'
-          }
-          if (id.includes('node_modules/recharts')) {
-            return 'charts-vendor'
-          }
+          if (
+            id.includes('node_modules/react') ||
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/react-router')
+          ) return 'react-vendor'
+          if (id.includes('node_modules/@radix-ui')) return 'ui-vendor'
+          if (
+            id.includes('node_modules/react-hook-form') ||
+            id.includes('node_modules/zod') ||
+            id.includes('node_modules/@hookform')
+          ) return 'form-vendor'
+          if (id.includes('node_modules/framer-motion')) return 'animation-vendor'
+          if (id.includes('node_modules/lucide-react')) return 'icons-vendor'
+          if (id.includes('node_modules/firebase')) return 'firebase-vendor'
+          if (id.includes('node_modules/@stripe')) return 'stripe-vendor'
+          if (id.includes('node_modules/recharts')) return 'charts-vendor'
         },
         assetFileNames: (assetInfo) => {
           if (!assetInfo.name) return 'assets/[name]-[hash][extname]'
