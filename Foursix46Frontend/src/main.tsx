@@ -47,21 +47,13 @@ export const createRoot = ViteReactSSG({ routes }, ({ isClient }) => {
       console.error("[UNHANDLED PROMISE]", e.reason);
     });
 
-    // ── Fade out SSG placeholder once React hydrates ──────────────────────
-    const root = document.getElementById("root")!;
-    const placeholder = root.firstElementChild;
-
-    if (placeholder) {
-      placeholder.setAttribute(
-        "style",
-        "transition: opacity 0.3s ease-out; opacity: 1;",
-      );
-      setTimeout(() => {
-        placeholder.setAttribute(
-          "style",
-          "transition: opacity 0.3s ease-out; opacity: 0;",
-        );
-      }, 100);
+    // ── Fade out the loading overlay once React hydrates ──────────────────
+    // The overlay lives in index.html outside #root so it never touches
+    // the React app itself. We fade it out and then remove it from the DOM.
+    const overlay = document.getElementById("loading-overlay");
+    if (overlay) {
+      overlay.style.opacity = "0";
+      setTimeout(() => overlay.remove(), 300);
     }
   }
 });
