@@ -89,12 +89,13 @@ export const routes: RouteRecord[] = [
         Component: FullBleedLayout,
         children: [
           {
-            path: "locations/:locationSlug/:serviceSlug",
+            path: "/locations/:locationSlug/:serviceSlug",
             lazy: async () => {
-              const mod = await import("@/pages/LocationServicePage");
+              const mod = await import("./pages/LocationServicePage");
               return {
                 Component: mod.default,
-                ...(mod.loader && { loader: mod.loader }),
+                loader: mod.loader,
+                entry: mod.entry,
               };
             },
           },
@@ -114,48 +115,51 @@ export const routes: RouteRecord[] = [
 
           { path: "blog", element: s(BlogsPage) },
           {
-            path: "blog/:slug",
+            path: "/blog/:slug",
             lazy: async () => {
-              const mod = await import("@/pages/BlogPostPage");
+              const mod = await import("./pages/BlogPostPage");
               return {
                 Component: mod.default,
-                ...(mod.loader && { loader: mod.loader }),
+                loader: mod.loader,
+                entry: mod.entry,
               };
             },
           },
-
           { path: "services", element: s(ServicesPage) },
           {
-            path: "services/:slug",
+            path: "/services/:slug",
             lazy: async () => {
-              const mod = await import("@/pages/ServiceDetailPage");
+              const mod = await import("./pages/ServiceDetailPage");
               return {
                 Component: mod.default,
-                ...(mod.loader && { loader: mod.loader }),
+                loader: mod.loader,
+                entry: mod.entry,
               };
             },
           },
 
           { path: "sectors", element: s(SectorsPage) },
           {
-            path: "sectors/:slug",
+            path: "/sectors/:slug",
             lazy: async () => {
-              const mod = await import("@/pages/SectorDetailPage");
+              const mod = await import("./pages/SectorDetailPage");
               return {
                 Component: mod.default,
-                ...(mod.loader && { loader: mod.loader }),
+                loader: mod.loader,
+                entry: mod.entry,
               };
             },
           },
 
           { path: "locations", element: s(LocationsPage) },
           {
-            path: "locations/:slug",
+            path: "/locations/:slug",
             lazy: async () => {
-              const mod = await import("@/pages/LocationDetailPage");
+              const mod = await import("./pages/LocationDetailPage");
               return {
                 Component: mod.default,
-                ...(mod.loader && { loader: mod.loader }),
+                loader: mod.loader,
+                entry: mod.entry,
               };
             },
           },
