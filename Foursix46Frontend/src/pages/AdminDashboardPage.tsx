@@ -3559,15 +3559,21 @@ export default function AdminDashboardPage() {
       successLabel: string,
     ) =>
     async (data: any) => {
-      const isEdit = !!editingItem;
-      const url = isEdit ? updateEndpoint(editingItem.id) : createEndpoint;
+      // ✅ Use data.id from the dialog payload — zero closure dependency
+      const isEdit = !!data.id;
+      const url = isEdit ? updateEndpoint(data.id) : createEndpoint;
+
+      // ✅ Strip id from the body — don't save it as a Firestore/DB field
+      const { id, ...body } = data;
+
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.message ?? "Save failed");
+
       toast.success(
         isEdit ? `${successLabel} updated!` : `${successLabel} created!`,
       );
@@ -5204,64 +5210,110 @@ export default function AdminDashboardPage() {
                     value={(selectedApp as DriverApplication).rightToWorkCode}
                   />
                   <h3
-  className="text-lg font-extrabold mt-4 mb-2 uppercase tracking-wide"
-  style={{ color: "#48AEDD", borderBottom: "2px solid #F1C40F" }}
->
-  Documents
-</h3>
+                    className="text-lg font-extrabold mt-4 mb-2 uppercase tracking-wide"
+                    style={{
+                      color: "#48AEDD",
+                      borderBottom: "2px solid #F1C40F",
+                    }}
+                  >
+                    Documents
+                  </h3>
 
-{/* Check if ANY document URL exists */}
-{!(selectedApp as DriverApplication).drivingLicenseUrl &&
- !(selectedApp as DriverApplication).rightToWorkDocUrl &&
- !(selectedApp as DriverApplication).vehicleInsuranceUrl &&
- !(selectedApp as DriverApplication).publicLiabilityInsuranceUrl &&
- !(selectedApp as DriverApplication).goodsInTransitInsuranceUrl ? (
-  // ✅ Empty state — shown when driver hasn't uploaded anything yet
-  <div className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200 mb-3">
-    <Hourglass className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-    <div>
-      <p className="text-sm font-semibold text-yellow-800">No documents uploaded yet</p>
-      <p className="text-xs text-yellow-700 mt-0.5">
-        The driver has not uploaded any documents. They will be shared via the approval email.
-      </p>
-    </div>
-  </div>
-) : (
-  // ✅ Show available documents
-  <>
-    {(selectedApp as DriverApplication).drivingLicenseUrl && (
-      <DetailRow
-        label="Driving License"
-        value={<FilePreview url={(selectedApp as DriverApplication).drivingLicenseUrl!} />}
-      />
-    )}
-    {(selectedApp as DriverApplication).rightToWorkDocUrl && (
-      <DetailRow
-        label="Right to Work"
-        value={<FilePreview url={(selectedApp as DriverApplication).rightToWorkDocUrl!} />}
-      />
-    )}
-    {(selectedApp as DriverApplication).vehicleInsuranceUrl && (
-      <DetailRow
-        label="Vehicle Insurance"
-        value={<FilePreview url={(selectedApp as DriverApplication).vehicleInsuranceUrl!} />}
-      />
-    )}
-    {(selectedApp as DriverApplication).publicLiabilityInsuranceUrl && (
-      <DetailRow
-        label="Public Liability Insurance"
-        value={<FilePreview url={(selectedApp as DriverApplication).publicLiabilityInsuranceUrl!} />}
-      />
-    )}
-    {(selectedApp as DriverApplication).goodsInTransitInsuranceUrl && (
-      <DetailRow
-        label="Goods In Transit Insurance"
-        value={<FilePreview url={(selectedApp as DriverApplication).goodsInTransitInsuranceUrl!} />}
-      />
-    )}
-  </>
-)}
-                  
+                  {/* Check if ANY document URL exists */}
+                  {!(selectedApp as DriverApplication).drivingLicenseUrl &&
+                  !(selectedApp as DriverApplication).rightToWorkDocUrl &&
+                  !(selectedApp as DriverApplication).vehicleInsuranceUrl &&
+                  !(selectedApp as DriverApplication)
+                    .publicLiabilityInsuranceUrl &&
+                  !(selectedApp as DriverApplication)
+                    .goodsInTransitInsuranceUrl ? (
+                    // ✅ Empty state — shown when driver hasn't uploaded anything yet
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200 mb-3">
+                      <Hourglass className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-yellow-800">
+                          No documents uploaded yet
+                        </p>
+                        <p className="text-xs text-yellow-700 mt-0.5">
+                          The driver has not uploaded any documents. They will
+                          be shared via the approval email.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    // ✅ Show available documents
+                    <>
+                      {(selectedApp as DriverApplication).drivingLicenseUrl && (
+                        <DetailRow
+                          label="Driving License"
+                          value={
+                            <FilePreview
+                              url={
+                                (selectedApp as DriverApplication)
+                                  .drivingLicenseUrl!
+                              }
+                            />
+                          }
+                        />
+                      )}
+                      {(selectedApp as DriverApplication).rightToWorkDocUrl && (
+                        <DetailRow
+                          label="Right to Work"
+                          value={
+                            <FilePreview
+                              url={
+                                (selectedApp as DriverApplication)
+                                  .rightToWorkDocUrl!
+                              }
+                            />
+                          }
+                        />
+                      )}
+                      {(selectedApp as DriverApplication)
+                        .vehicleInsuranceUrl && (
+                        <DetailRow
+                          label="Vehicle Insurance"
+                          value={
+                            <FilePreview
+                              url={
+                                (selectedApp as DriverApplication)
+                                  .vehicleInsuranceUrl!
+                              }
+                            />
+                          }
+                        />
+                      )}
+                      {(selectedApp as DriverApplication)
+                        .publicLiabilityInsuranceUrl && (
+                        <DetailRow
+                          label="Public Liability Insurance"
+                          value={
+                            <FilePreview
+                              url={
+                                (selectedApp as DriverApplication)
+                                  .publicLiabilityInsuranceUrl!
+                              }
+                            />
+                          }
+                        />
+                      )}
+                      {(selectedApp as DriverApplication)
+                        .goodsInTransitInsuranceUrl && (
+                        <DetailRow
+                          label="Goods In Transit Insurance"
+                          value={
+                            <FilePreview
+                              url={
+                                (selectedApp as DriverApplication)
+                                  .goodsInTransitInsuranceUrl!
+                              }
+                            />
+                          }
+                        />
+                      )}
+                    </>
+                  )}
+
                   <h3
                     className="text-lg font-extrabold mt-4 mb-2 uppercase tracking-wide"
                     style={{

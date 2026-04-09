@@ -497,6 +497,7 @@ const TagInput = ({
 
 /* ─── Types ─── */
 interface FaqFormData {
+  id?: string; // ✅ FIX C: include id so parent onSave doesn't need its own editingItem ref
   question: string;
   answer: string;
   status: "draft" | "published";
@@ -522,28 +523,24 @@ interface Props {
 /* ─── FaqFormDialog ─── */
 export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
   const [form, setForm] = useState<FaqFormData>(defaultForm);
-
-  // ✅ FIX 1: Track sortOrder as a raw string while the user types
-  //    so intermediate states like "" or "-" don't corrupt form.sortOrder
   const [sortOrderStr, setSortOrderStr] = useState("0");
-
   const [isSaving, setIsSaving] = useState(false);
 
-  // ✅ FIX 2: Use editingItem?.id (stable string primitive) as the dependency,
-  //    NOT the editingItem object itself.
-  //
-  //    BEFORE: [editingItem, open]
-  //      → parent re-render creates a new editingItem object reference
-  //      → effect fires even though data is identical
-  //      → form resets → tag/sortOrder edits are silently lost
-  //
-  //    AFTER: [editingId, open]
-  //      → effect only fires when a genuinely different item is opened
+  // ✅ FIX A+B: Sync refs updated on every render — handleSave ALWAYS reads
+  //    the absolute latest form state and the absolute latest onSave prop.
+  //    Eliminates both the stale-closure-on-form and stale-prop-callback bugs.
+  const formRef = useRef(form);
+  const onSaveRef = useRef(onSave);
+  formRef.current = form; // synchronous — runs before any event handler fires
+  onSaveRef.current = onSave;
+
+  // ✅ PREVIOUS FIX: depend on editingItem?.id, not the full object —
+  //    prevents form reset on every parent re-render with a new object reference.
   const editingId = editingItem?.id ?? null;
 
   useEffect(() => {
     if (!open) return;
-    const next = editingItem
+    const next: FaqFormData = editingItem
       ? {
           ...defaultForm,
           ...editingItem,
@@ -553,30 +550,41 @@ export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
         }
       : defaultForm;
     setForm(next);
-    setSortOrderStr(String(next.sortOrder)); // sync string mirror
-  }, [editingId, open]); // ← KEY FIX: editingId, not editingItem
+    setSortOrderStr(String(next.sortOrder ?? 0));
+  }, [editingId, open]);
 
   const update = (f: Partial<FaqFormData>) => setForm((p) => ({ ...p, ...f }));
 
-  // ✅ FIX 3: Keep sortOrderStr in sync when form is updated externally
   const handleSortOrderChange = (raw: string) => {
-    setSortOrderStr(raw); // allow free typing including "", "-", "10"
+    setSortOrderStr(raw);
     const parsed = parseInt(raw, 10);
     update({ sortOrder: isNaN(parsed) ? 0 : parsed });
   };
 
   const handleSave = async (status: "draft" | "published") => {
-    if (!form.question.trim()) {
+    // ✅ FIX A+B: Read from ref — guaranteed latest form and latest onSave,
+    //    immune to any render-timing or stale-prop-closure issue.
+    const currentForm = formRef.current;
+    const save = onSaveRef.current;
+
+    if (!currentForm.question.trim()) {
       alert("Question is required.");
       return;
     }
-    if (!form.answer.trim()) {
+    if (!currentForm.answer.trim()) {
       alert("Answer is required.");
       return;
     }
+
     setIsSaving(true);
     try {
-      await onSave({ ...form, status });
+      // ✅ FIX C: Pass id explicitly — parent's onSave can use data.id directly
+      //    instead of relying on its own potentially-stale editingItem closure.
+      await save({
+        ...currentForm,
+        status,
+        ...(editingItem?.id ? { id: editingItem.id } : {}),
+      });
     } finally {
       setIsSaving(false);
     }
@@ -600,7 +608,6 @@ export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 pr-2 space-y-5 py-2">
-          {/* FAQ ID banner */}
           {editingItem?.id && (
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
               <div className="flex-1 min-w-0">
@@ -620,9 +627,7 @@ export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
             <Label className="font-semibold">
               Question *{" "}
               <span
-                className={`text-xs font-normal ${
-                  questionLen > 200 ? "text-red-500" : "text-muted-foreground"
-                }`}
+                className={`text-xs font-normal ${questionLen > 200 ? "text-red-500" : "text-muted-foreground"}`}
               >
                 ({questionLen} chars)
               </span>
@@ -640,9 +645,7 @@ export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
             <Label className="font-semibold">
               Answer (HTML / Rich Text) *{" "}
               <span
-                className={`text-xs font-normal ${
-                  answerLen > 2000 ? "text-amber-500" : "text-muted-foreground"
-                }`}
+                className={`text-xs font-normal ${answerLen > 2000 ? "text-amber-500" : "text-muted-foreground"}`}
               >
                 ({answerLen} chars)
               </span>
@@ -686,13 +689,11 @@ export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
                   (lower = shown first)
                 </span>
               </Label>
-              {/* ✅ FIX: use string mirror so typing "10" works naturally */}
               <Input
                 type="number"
                 value={sortOrderStr}
                 onChange={(e) => handleSortOrderChange(e.target.value)}
                 onBlur={() => {
-                  // On blur, normalise: empty / NaN → "0"
                   const parsed = parseInt(sortOrderStr, 10);
                   const safe = isNaN(parsed) ? 0 : parsed;
                   setSortOrderStr(String(safe));
@@ -712,7 +713,7 @@ export function FaqFormDialog({ open, editingItem, onClose, onSave }: Props) {
             placeholder="e.g. pricing, insurance, tracking"
           />
 
-          {/* Live Accordion Preview */}
+          {/* Live Preview */}
           {form.question && form.answer && (
             <div className="border rounded-xl p-4 space-y-2 bg-blue-50">
               <p className="text-xs font-bold uppercase tracking-wide text-[#134467]">
