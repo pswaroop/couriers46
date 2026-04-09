@@ -53,36 +53,38 @@ const TestimonialsPage = lazy(() =>
   })),
 );
 
-// ── Wrap lazy page in Suspense for SSG entry points ───────────────────────────
 const s = (Component: React.ComponentType) => (
   <Suspense fallback={<PageLoader />}>
     <Component />
   </Suspense>
 );
 
+// ── KEY FIX ───────────────────────────────────────────────────────────────────
+// During SSG (Node.js), typeof window === 'undefined'.
+// Admin routes are excluded from the route tree entirely so vite-react-ssg
+// never discovers them, never renders them, and Firebase never loads in Node.
+// In the browser, isBrowser = true and admin routes are included normally.
+const isBrowser = typeof window !== "undefined";
+
 export const routes: RouteRecord[] = [
   {
-    // ── Root: provides QueryClient, HelmetProvider, Toaster, ScrollToTop ──
     path: "/",
     Component: RootLayout,
     children: [
-      // ── ADMIN ─────────────────────────────────────────────────────────────
-      {
-        Component: AdminLayout,
-        children: [
-          {
-            path: "admin/login",
-            element: typeof window !== "undefined" ? s(AdminLoginPage) : null,
-          },
-          {
-            path: "admin/dashboard",
-            element:
-              typeof window !== "undefined" ? s(AdminDashboardPage) : null,
-          },
-        ],
-      },
+      // ── ADMIN — only registered in the browser, never during SSG ─────────
+      ...(isBrowser
+        ? [
+            {
+              Component: AdminLayout,
+              children: [
+                { path: "admin/login", element: s(AdminLoginPage) },
+                { path: "admin/dashboard", element: s(AdminDashboardPage) },
+              ],
+            },
+          ]
+        : []),
 
-      // ── FULL-BLEED (location service pages) ───────────────────────────────
+      // ── FULL-BLEED ────────────────────────────────────────────────────────
       {
         Component: FullBleedLayout,
         children: [
@@ -103,7 +105,6 @@ export const routes: RouteRecord[] = [
       {
         Component: PublicLayout,
         children: [
-          // Core
           { index: true, element: s(HomePage) },
           { path: "quick-quote", element: s(QuickQuotePage) },
           { path: "get-a-quote/thank-you", element: s(QuickQuoteThankYouPage) },
@@ -111,7 +112,6 @@ export const routes: RouteRecord[] = [
           { path: "for-businesses", element: s(ForBusinessesPage) },
           { path: "testimonials", element: s(TestimonialsPage) },
 
-          // Blog
           { path: "blog", element: s(BlogsPage) },
           {
             path: "blog/:slug",
@@ -124,7 +124,6 @@ export const routes: RouteRecord[] = [
             },
           },
 
-          // Services
           { path: "services", element: s(ServicesPage) },
           {
             path: "services/:slug",
@@ -137,7 +136,6 @@ export const routes: RouteRecord[] = [
             },
           },
 
-          // Sectors
           { path: "sectors", element: s(SectorsPage) },
           {
             path: "sectors/:slug",
@@ -150,7 +148,6 @@ export const routes: RouteRecord[] = [
             },
           },
 
-          // Locations
           { path: "locations", element: s(LocationsPage) },
           {
             path: "locations/:slug",
@@ -163,12 +160,10 @@ export const routes: RouteRecord[] = [
             },
           },
 
-          // Pay
           { path: "pay", element: s(PayPage) },
           { path: "pay/success", element: s(PaySuccessPage) },
           { path: "pay/cancel", element: s(PayCancelPage) },
 
-          // Info
           { path: "about", element: s(AboutPage) },
           { path: "contact", element: s(ContactPage) },
           { path: "privacy", element: s(PrivacyPolicyPage) },
@@ -179,13 +174,11 @@ export const routes: RouteRecord[] = [
           { path: "accredited-trusted", element: s(AccreditedTrustedPage) },
           { path: "rha-summary", element: s(RHAPage) },
 
-          // Thank You
           { path: "driver-thank-you", element: s(DriverThankYouPage) },
           { path: "shipper-thank-you", element: s(ShipperThankYouPage) },
           { path: "contact-thank-you", element: s(ContactThankYouPage) },
           { path: "booking-thank-you", element: s(BookingThankYouPage) },
 
-          // Redirect
           {
             path: "send-parcel",
             element: <Navigate to="/quick-quote" replace />,

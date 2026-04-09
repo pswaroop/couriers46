@@ -708,8 +708,6 @@ export const FullBleedLayout = () => (
 
 // ── Admin Layout ──────────────────────────────────────────────────────────────
 export const AdminLayout = () => {
-  if (typeof window === "undefined") return null; // ⛔ STOP SSR
-
   return (
     <PageErrorBoundary>
       <div className="min-h-screen bg-gray-100">
