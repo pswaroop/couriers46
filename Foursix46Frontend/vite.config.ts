@@ -24,7 +24,9 @@ export default defineConfig(({ mode }) => ({
         (p) => p !== "admin/login"
               && p !== "/admin/login"
               && p !== "admin/dashboard"
-              && p !== "/admin/dashboard",
+              && p !== "/admin/dashboard"
+              && p !== "send-parcel"   
+              && p !== "/send-parcel",
       );
     },
   },

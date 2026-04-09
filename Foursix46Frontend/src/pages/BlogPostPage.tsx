@@ -793,6 +793,20 @@ function renderBlock(block: ContentBlock, i: number) {
 /* ─────────────────────────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────────────────────────── */
+export async function entry(): Promise<{ slug: string }[]> {
+  try {
+    const res = await fetch(`${apiUrl}/api/blogs`);
+    const data = await res.json();
+    const items = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+        ? data
+        : [];
+    return items.map((s: { slug: string }) => ({ slug: s.slug }));
+  } catch {
+    return [];
+  }
+}
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();

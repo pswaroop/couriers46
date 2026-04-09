@@ -544,7 +544,7 @@
 //   );
 // }
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLoaderData } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   ArrowLeft,
@@ -788,6 +788,28 @@ const DedicatedCourierNetwork = () => (
 // MAIN PAGE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Add this export to LocationServicePage.tsx
+export async function entry(): Promise<
+  { locationSlug: string; serviceSlug: string }[]
+> {
+  try {
+    const [locRes, svcRes] = await Promise.all([
+      fetch(`${apiUrl}/api/locations`),
+      fetch(`${apiUrl}/api/services`),
+    ]);
+    const locations = await locRes.json();
+    const services = await svcRes.json();
+    const locs = Array.isArray(locations?.data) ? locations.data : [];
+    const svcs = Array.isArray(services?.data) ? services.data : [];
+    return locs.flatMap((l: { slug: string }) =>
+      svcs.map((s: { slug: string }) => ({
+        locationSlug: l.slug,
+        serviceSlug: s.slug,
+      })),
+    );
+  } catch {
+    return [];
+  }
+}
 export async function loader({ params }: { params: Record<string, string> }) {
   const { locationSlug, serviceSlug } = params;
   if (!locationSlug || !serviceSlug)
@@ -815,44 +837,114 @@ export async function loader({ params }: { params: Record<string, string> }) {
   }
 }
 export default function LocationServicePage() {
+  // const { locationSlug, serviceSlug } = useParams();
+  // const navigate = useNavigate();
+
+  // const [page, setPage] = useState<any>(null);
+  // const [loading, setLoading] = useState(true);
+  // const [notFound, setNotFound] = useState(false);
+  // //const [fetchedFaqs, setFetchedFaqs] = useState<any[]>([]);
+
+  // const loaderData = useLoaderData() as
+  //   | { location: any; service: any; allFaqs: any[] }
+  //   | undefined;
+
+  // const [fetchedFaqs, setFetchedFaqs] = useState<any[]>(
+  //   loaderData?.allFaqs ?? [], // ← seed from loader
+  // );
+
+  // /* ── Resolve FAQs ── */
+  // useEffect(() => {
+  //   if (!locationSlug || !serviceSlug) return;
+  //   if (!page) return;
+
+  //   if (
+  //     page.faqs?.length &&
+  //     typeof page.faqs[0] === "object" &&
+  //     page.faqs[0].question
+  //   ) {
+  //     setFetchedFaqs(page.faqs);
+  //     return;
+  //   }
+
+  //   if (!page.faqIds?.length) return;
+  //   if (loaderData?.location && loaderData?.service) {
+  //     setPage({ ...loaderData.location, service: loaderData.service });
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   (async () => {
+  //     try {
+  //       setLoading(true);
+  //       setNotFound(false);
+  //       const res1 = await fetch(
+  //         `${apiUrl}/api/location-services/${locationSlug}/${serviceSlug}`,
+  //       );
+  //       const res = await fetch(`${apiUrl}/api/faqs`);
+  //       if (!res.ok) return;
+  //       const data = await res.json();
+  //       const all: any[] = data.data || data;
+  //       setFetchedFaqs(all.filter((f: any) => page.faqIds.includes(f.id)));
+  //       const json = await res1.json();
+  //       setPage(json.data || json);
+  //     } catch {
+  //       /* silent */
+  //     }
+  //   })();
+  // }, [page]);
+
+  // /* ── Fetch page ── */
+  // useEffect(() => {
+  //   if (!locationSlug || !serviceSlug) return;
+
+  //   (async () => {
+  //     try {
+  //       setLoading(true);
+  //       setNotFound(false);
+
+  //       const res = await fetch(
+  //         `${apiUrl}/api/location-services/${locationSlug}/${serviceSlug}`,
+  //       );
+
+  //       if (res.status === 404) {
+  //         setNotFound(true);
+  //         return;
+  //       }
+  //       if (!res.ok) throw new Error("Request failed");
+
+  //       const json = await res.json();
+  //       setPage(json.data || json);
+  //     } catch (err) {
+  //       console.error("Landing page error:", err);
+  //       setNotFound(true);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   })();
+  // }, [locationSlug, serviceSlug]);
   const { locationSlug, serviceSlug } = useParams();
   const navigate = useNavigate();
 
-  const [page, setPage] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const loaderData = useLoaderData() as
+    | { location: any; service: any; allFaqs: any[] }
+    | undefined;
+
+  // Seed state from SSG loader if available, otherwise start empty
+  const [page, setPage] = useState<any>(
+    loaderData?.location
+      ? { ...loaderData.location, service: loaderData.service }
+      : null,
+  );
+  const [loading, setLoading] = useState(!loaderData?.location);
   const [notFound, setNotFound] = useState(false);
-  const [fetchedFaqs, setFetchedFaqs] = useState<any[]>([]);
+  const [fetchedFaqs, setFetchedFaqs] = useState<any[]>(
+    loaderData?.allFaqs ?? [],
+  );
 
-  /* ── Resolve FAQs ── */
+  /* ── Client-side fetch — only runs when loader didn't provide data ── */
   useEffect(() => {
-    if (!page) return;
-
-    if (
-      page.faqs?.length &&
-      typeof page.faqs[0] === "object" &&
-      page.faqs[0].question
-    ) {
-      setFetchedFaqs(page.faqs);
-      return;
-    }
-
-    if (!page.faqIds?.length) return;
-
-    (async () => {
-      try {
-        const res = await fetch(`${apiUrl}/api/faqs`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const all: any[] = data.data || data;
-        setFetchedFaqs(all.filter((f: any) => page.faqIds.includes(f.id)));
-      } catch {
-        /* silent */
-      }
-    })();
-  }, [page]);
-
-  /* ── Fetch page ── */
-  useEffect(() => {
+    if (loaderData?.location) return; // SSG already hydrated — skip
     if (!locationSlug || !serviceSlug) return;
 
     (async () => {
@@ -879,7 +971,46 @@ export default function LocationServicePage() {
         setLoading(false);
       }
     })();
-  }, [locationSlug, serviceSlug]);
+  }, [locationSlug, serviceSlug]); // loaderData intentionally omitted — stable ref
+
+  /* ── Resolve FAQs — runs after page is set ── */
+  useEffect(() => {
+    if (!page) return;
+
+    // Case 1 — FAQs already embedded in page object as full objects
+    if (
+      page.faqs?.length &&
+      typeof page.faqs[0] === "object" &&
+      page.faqs[0].question
+    ) {
+      setFetchedFaqs(page.faqs);
+      return;
+    }
+
+    // Case 2 — No FAQ IDs to resolve
+    if (!page.faqIds?.length) return;
+
+    // Case 3 — Loader already provided all FAQs — filter from them
+    if (loaderData?.allFaqs?.length) {
+      setFetchedFaqs(
+        loaderData.allFaqs.filter((f: any) => page.faqIds.includes(f.id)),
+      );
+      return;
+    }
+
+    // Case 4 — Client-side fallback — fetch FAQs fresh
+    (async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/faqs`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const all: any[] = data.data || data;
+        setFetchedFaqs(all.filter((f: any) => page.faqIds.includes(f.id)));
+      } catch {
+        /* silent */
+      }
+    })();
+  }, [page]);
 
   /* ── Loading ── */
   if (loading) {

@@ -225,6 +225,20 @@ const DedicatedCourierNetwork = () => (
    MAIN PAGE
 ───────────────────────────────────────────────────────────────────────────── */
 // Add this export to LocationDetailPage.tsx
+export async function entry(): Promise<{ slug: string }[]> {
+  try {
+    const res = await fetch(`${apiUrl}/api/locations`);
+    const data = await res.json();
+    const items = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+        ? data
+        : [];
+    return items.map((s: { slug: string }) => ({ slug: s.slug }));
+  } catch {
+    return [];
+  }
+}
 export async function loader({ params }: { params: Record<string, string> }) {
   const slug = params.slug;
   if (!slug) return { location: null, allFaqs: [] };

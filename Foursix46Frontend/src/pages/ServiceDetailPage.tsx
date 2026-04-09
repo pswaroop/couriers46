@@ -1160,6 +1160,20 @@ const HOW_IT_WORKS = [
 /* ─────────────────────────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────────────────────────── */
+export async function entry(): Promise<{ slug: string }[]> {
+  try {
+    const res = await fetch(`${apiUrl}/api/services`);
+    const data = await res.json();
+    const services = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+        ? data
+        : [];
+    return services.map((s: { slug: string }) => ({ slug: s.slug }));
+  } catch {
+    return []; // graceful fallback → CSR only
+  }
+}
 export default function ServiceDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
