@@ -158,100 +158,70 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
 
   // ── SSG Options ─────────────────────────────────────────────────────────────
-  ssgOptions: {
+ ssgOptions: {
 
-    // ── Dynamic route discovery ─────────────────────────────────────────────
-    includedRoutes(paths: string[]): Promise<string[]> {
-      const filtered = paths.filter((p) => !EXCLUDED_ROUTES.has(p));
+  // ── Dynamic route discovery ───────────────────────────────────────────────
+  includedRoutes(paths: string[]): Promise<string[]> {
+    const filtered = paths.filter((p) => !EXCLUDED_ROUTES.has(p));
 
-      const apiUrl = process.env.VITE_API_URL;
-      if (!apiUrl) {
-        console.warn("[SSG] VITE_API_URL is not set — skipping dynamic routes");
-        return Promise.resolve(filtered);
-      }
+    const apiUrl = process.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.warn("[SSG] VITE_API_URL is not set — skipping dynamic routes");
+      return Promise.resolve(filtered);
+    }
 
-      const safeFetch = async (url: string) => {
-        try {
-          const res = await fetch(url);
-          const text = await res.text();
-          const data = JSON.parse(text);
-          console.log(
-            `[SSG] ✅ ${url} → ${(data?.data || data)?.length ?? 0} items`,
-          );
-          return data;
-        } catch (e) {
-          console.error(`[SSG] ❌ Failed to fetch ${url}:`, e);
+    const safeFetch = async (url: string) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.error(`[SSG] ❌ ${url} returned HTTP ${res.status}`);
           return null;
         }
-      };
+        const data = await res.json();
+        const items = data?.data ?? data ?? [];
+        console.log(`[SSG] ✅ ${url} → ${items.length} items`);
+        return data;
+      } catch (e) {
+        console.error(`[SSG] ❌ Failed to fetch ${url}:`, e);
+        return null;
+      }
+    };
 
-      return Promise.all([
-        safeFetch(`${apiUrl}/api/services`),
-        safeFetch(`${apiUrl}/api/sectors`),
-        safeFetch(`${apiUrl}/api/locations`),
-        safeFetch(`${apiUrl}/api/blogs`),
-      ]).then(([services, sectors, locations, blogs]) => {
-        const svcs = services?.data  || services  || [];
-        const scts = sectors?.data   || sectors   || [];
-        const locs = locations?.data || locations || [];
-        const blgs = blogs?.data     || blogs     || [];
+    return Promise.all([
+      safeFetch(`${apiUrl}/api/services`),
+      safeFetch(`${apiUrl}/api/sectors`),
+      safeFetch(`${apiUrl}/api/locations`),
+      safeFetch(`${apiUrl}/api/blog`),   // ✅ fixed: /api/blog not /api/blogs
+    ]).then(([services, sectors, locations, blogs]) => {
+      const svcs = services?.data  || services  || [];
+      const scts = sectors?.data   || sectors   || [];
+      const locs = locations?.data || locations || [];
+      // ✅ filter to published only — no point pre-rendering drafts
+      const blgs = (blogs?.data || blogs || []).filter(
+        (b: any) => b.status === "published" && b.slug,
+      );
 
-        console.log(
-          `[SSG] Dynamic routes → services:${svcs.length}  sectors:${scts.length}  locations:${locs.length}  blogs:${blgs.length}  loc×svc:${locs.length * svcs.length}`,
-        );
+      console.log(
+        `[SSG] Dynamic routes → services:${svcs.length}  sectors:${scts.length}  locations:${locs.length}  blogs:${blgs.length}  loc×svc:${locs.length * svcs.length}`,
+      );
 
-        return [
-          ...filtered,
-          ...svcs.map((s: any) => `/services/${s.slug}`),
-          ...scts.map((s: any) => `/sectors/${s.slug}`),
-          ...locs.map((l: any) => `/locations/${l.slug}`),
-          ...blgs.map((b: any) => `/blog/${b.slug}`),
-          ...locs.flatMap((l: any) =>
-            svcs.map((s: any) => `/locations/${l.slug}/${s.slug}`),
-          ),
-        ];
-      });
-    },
-
-    // ── Canonical injection ─────────────────────────────────────────────────
-    // react-helmet-async does not extract <link> tags into SSG HTML by default.
-    // This hook runs after each page is rendered and guarantees every static
-    // page has a correct <link rel="canonical"> in its <head>.
-    //
-    // Priority: page-level Helmet canonical (set in each page component) wins
-    // over this fallback because it's injected BEFORE </head>. If Helmet ever
-    // starts injecting link tags, this safely deduplicates by checking first.
-    // onPageRendered(route: string, html: string): string {
-    //   // Skip admin and non-public routes
-    //   if (EXCLUDED_ROUTES.has(route) || route.startsWith("/admin")) {
-    //     return html;
-    //   }
-
-    //   // Normalise: remove trailing slash (except root "/")
-    //   const cleanRoute =
-    //     route.endsWith("/") && route !== "/" ? route.slice(0, -1) : route;
-
-    //   const canonical = `${BASE_URL}${cleanRoute}`;
-
-    //   // If canonical already exists (injected by Helmet), replace it to ensure
-    //   // correct www + trailing-slash normalisation.
-    //   if (
-    //     html.includes('rel="canonical"') ||
-    //     html.includes("rel='canonical'")
-    //   ) {
-    //     return html.replace(
-    //       /<link\s[^>]*rel=["']canonical["'][^>]*\/?>/i,
-    //       `<link rel="canonical" href="${canonical}" />`,
-    //     );
-    //   }
-
-    //   // Not present — inject just before </head>
-    //   return html.replace(
-    //     "</head>",
-    //     `  <link rel="canonical" href="${canonical}" />\n</head>`,
-    //   );
-    // },
+      return [
+        ...filtered,
+        ...svcs.map((s: any) => `/services/${s.slug}`),
+        ...scts.map((s: any) => `/sectors/${s.slug}`),
+        ...locs.map((l: any) => `/locations/${l.slug}`),
+        ...blgs.map((b: any) => `/blog/${b.slug}`),   // ✅ generates real HTML per post
+        ...locs.flatMap((l: any) =>
+          svcs.map((s: any) => `/locations/${l.slug}/${s.slug}`),
+        ),
+      ];
+    });
   },
+
+  // ── Canonical injection ───────────────────────────────────────────────────
+  // Handled by scripts/inject-canonical.mjs post-build — see package.json
+  // "build": "vite-ssg build && node scripts/inject-canonical.mjs"
+},
 
   // ── Path aliases ────────────────────────────────────────────────────────────
   resolve: {
