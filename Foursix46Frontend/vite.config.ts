@@ -17,19 +17,64 @@ export default defineConfig(({ mode }) => ({
 
   // ── ssgOptions is the CORRECT place for includedRoutes ───────────────────
   ssgOptions: {
-    includedRoutes(paths: string[]) {
-      // vite-react-ssg may emit paths with OR without leading slash
-      // e.g. "admin/login" or "/admin/login" — filter both
-      return paths.filter(
-        (p) => p !== "admin/login"
-              && p !== "/admin/login"
-              && p !== "admin/dashboard"
-              && p !== "/admin/dashboard"
-              && p !== "send-parcel"   
-              && p !== "/send-parcel",
+  async includedRoutes(paths: string[]) {
+    // ── Step 1: filter out private/admin routes ──────────────────
+    const filtered = paths.filter(
+      (p) =>
+        p !== "admin/login" &&
+        p !== "/admin/login" &&
+        p !== "admin/dashboard" &&
+        p !== "/admin/dashboard" &&
+        p !== "send-parcel" &&
+        p !== "/send-parcel",
+    );
+
+    // ── Step 2: fetch dynamic paths from API ─────────────────────
+    const apiUrl = process.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.warn("[SSG] VITE_API_URL is not set — skipping dynamic routes");
+      return filtered;
+    }
+
+    try {
+      const [services, sectors, locations, blogs]: [any, any, any, any] = await Promise.all([
+        fetch(`${apiUrl}/api/services`).then((r) => r.json()),
+        fetch(`${apiUrl}/api/sectors`).then((r) => r.json()),
+        fetch(`${apiUrl}/api/locations`).then((r) => r.json()),
+        fetch(`${apiUrl}/api/blogs`).then((r) => r.json()),
+      ]);
+
+      const svcs: { slug: string }[] = services?.data  || services  || [];
+      const scts: { slug: string }[] = sectors?.data   || sectors   || [];
+      const locs: { slug: string }[] = locations?.data || locations || [];
+      const blgs: { slug: string }[] = blogs?.data     || blogs     || [];
+
+      const servicePaths         = svcs.map((s) => `/services/${s.slug}`);
+      const sectorPaths          = scts.map((s) => `/sectors/${s.slug}`);
+      const locationPaths        = locs.map((l) => `/locations/${l.slug}`);
+      const blogPaths            = blgs.map((b) => `/blog/${b.slug}`);
+      const locationServicePaths = locs.flatMap((l) =>
+        svcs.map((s) => `/locations/${l.slug}/${s.slug}`),
       );
-    },
+
+      console.log(
+        `[SSG] Dynamic routes → services:${svcs.length}  sectors:${scts.length}  locations:${locs.length}  blogs:${blgs.length}  loc×svc:${locationServicePaths.length}`,
+      );
+
+      return [
+        ...filtered,
+        ...servicePaths,
+        ...sectorPaths,
+        ...locationPaths,
+        ...blogPaths,
+        ...locationServicePaths,
+      ];
+    } catch (e) {
+      console.error("[SSG] includedRoutes fetch failed:", e);
+      return filtered; // graceful fallback — static pages still render
+    }
   },
+},
 
   resolve: {
     alias: {
