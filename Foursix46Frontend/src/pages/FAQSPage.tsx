@@ -743,7 +743,7 @@ export default function FaqPage() {
           name="description"
           content="Answers to common questions about FourSix46® courier services, booking, pricing, and policies."
         />
-        <link rel="canonical" href="https://couriers.foursix46.com/faqs" />
+        <link rel="canonical" href="https://www.route46couriers.co.uk/faqs" />
 
         {/* ✅ Robots — explicitly allow indexing */}
         <meta name="robots" content="index, follow" />
@@ -754,11 +754,14 @@ export default function FaqPage() {
           property="og:description"
           content="Answers to common questions about FourSix46® courier services, booking, pricing, and policies."
         />
-        <meta property="og:url" content="https://couriers.foursix46.com/faqs" />
+        <meta
+          property="og:url"
+          content="https://www.route46couriers.co.uk/faqs"
+        />
         <meta property="og:type" content="website" />
         <meta
           property="og:image"
-          content="https://couriers.foursix46.com/og-default.jpg"
+          content="https://www.route46couriers.co.uk/og-default.jpg"
         />
         {/* ✅ og:image dimensions — prevents unfurling issues on Slack/LinkedIn */}
         <meta property="og:image:width" content="1200" />
@@ -777,7 +780,7 @@ export default function FaqPage() {
         />
         <meta
           name="twitter:image"
-          content="https://couriers.foursix46.com/og-default.jpg"
+          content="https://www.route46couriers.co.uk/og-default.jpg"
         />
         <meta name="twitter:image:alt" content="FourSix46 Couriers – FAQs" />
 
@@ -791,13 +794,13 @@ export default function FaqPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://couriers.foursix46.com",
+                item: "https://www.route46couriers.co.uk",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "FAQs",
-                item: "https://couriers.foursix46.com/faqs",
+                item: "https://www.route46couriers.co.uk/faqs",
               },
             ],
           })}

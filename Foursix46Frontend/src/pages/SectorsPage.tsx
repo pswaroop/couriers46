@@ -286,7 +286,10 @@ export default function SectorsPage() {
           name="description"
           content="Specialist courier services for dental, aerospace, medical and more industries across the UK."
         />
-        <link rel="canonical" href="https://couriers.foursix46.com/sectors" />
+        <link
+          rel="canonical"
+          href="https://www.route46couriers.co.uk/sectors"
+        />
         <meta property="og:title" content="Industry Sectors | FourSix46®" />
         <meta
           property="og:description"
@@ -294,12 +297,12 @@ export default function SectorsPage() {
         />
         <meta
           property="og:url"
-          content="https://couriers.foursix46.com/sectors"
+          content="https://www.route46couriers.co.uk/sectors"
         />
         <meta property="og:type" content="website" />
         <meta
           property="og:image"
-          content="https://couriers.foursix46.com/og-default.jpg"
+          content="https://www.route46couriers.co.uk/og-default.jpg"
         />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -310,13 +313,13 @@ export default function SectorsPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://couriers.foursix46.com",
+                item: "https://www.route46couriers.co.uk",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Industry Sectors",
-                item: "https://couriers.foursix46.com/sectors",
+                item: "https://www.route46couriers.co.uk/sectors",
               },
             ],
           })}

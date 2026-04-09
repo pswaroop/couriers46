@@ -569,7 +569,7 @@ import {
 } from "@/components/ui/accordion";
 
 const apiUrl = import.meta.env.VITE_API_URL;
-const BASE_URL = "https://couriers.foursix46.com";
+const BASE_URL = "https://www.route46couriers.co.uk";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CONSTANT SECTIONS — identical across Services / Sectors / Locations / Landing
@@ -1070,8 +1070,7 @@ export default function LocationServicePage() {
 
   /* ── Derived data ── */
   const heroImage = page.heroImage || "/route4622.png";
-  const canonicalUrl =
-    page.canonicalUrl || `${BASE_URL}/locations/${locationSlug}/${serviceSlug}`;
+  const canonicalUrl = `${BASE_URL}/locations/${locationSlug}/${serviceSlug}`;
   const proofPoints = page.localProofPoints || [];
   const contentBlocks = page.contentBlocks || [];
   const coverageAreas = page.coverageAreasOverride || [];

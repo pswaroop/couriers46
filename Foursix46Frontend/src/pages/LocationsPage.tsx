@@ -359,7 +359,10 @@ export default function LocationsPage() {
           name="description"
           content="Explore cities and regions where FourSix46® provides reliable same-day courier services across the UK mainland."
         />
-        <link rel="canonical" href="https://couriers.foursix46.com/locations" />
+        <link
+          rel="canonical"
+          href="https://www.route46couriers.co.uk/locations"
+        />
         <meta property="og:title" content="Locations We Serve | FourSix46®" />
         <meta
           property="og:description"
@@ -367,12 +370,12 @@ export default function LocationsPage() {
         />
         <meta
           property="og:url"
-          content="https://couriers.foursix46.com/locations"
+          content="https://www.route46couriers.co.uk/locations"
         />
         <meta property="og:type" content="website" />
         <meta
           property="og:image"
-          content="https://couriers.foursix46.com/og-default.jpg"
+          content="https://www.route46couriers.co.uk/og-default.jpg"
         />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -383,13 +386,13 @@ export default function LocationsPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://couriers.foursix46.com",
+                item: "https://www.route46couriers.co.uk",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Locations",
-                item: "https://couriers.foursix46.com/locations",
+                item: "https://www.route46couriers.co.uk/locations",
               },
             ],
           })}

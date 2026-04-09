@@ -911,13 +911,12 @@ export default function BlogPostPage() {
   }
 
   // ── Derived values ──
-  const canonicalUrl =
-    post.canonicalUrl || `https://couriers.foursix46.com/blog/${post.slug}`;
+  const canonicalUrl = `https://www.route46couriers.co.uk/blog/${post.slug}`;
 
   const ogImage =
     post.ogImage ||
     post.featuredImage ||
-    "https://couriers.foursix46.com/og-default.jpg";
+    "https://www.route46couriers.co.uk/og-default.jpg";
 
   const formattedDate = post.publishedDate
     ? new Date(post.publishedDate).toLocaleDateString("en-GB", {
@@ -1000,10 +999,10 @@ export default function BlogPostPage() {
             publisher: {
               "@type": "Organization",
               name: "FourSix46® Couriers",
-              url: "https://couriers.foursix46.com",
+              url: "https://www.route46couriers.co.uk",
               logo: {
                 "@type": "ImageObject",
-                url: "https://couriers.foursix46.com/logo.png",
+                url: "https://www.route46couriers.co.uk/logo.png",
               },
             },
             mainEntityOfPage: {
@@ -1023,13 +1022,13 @@ export default function BlogPostPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://couriers.foursix46.com",
+                item: "https://www.route46couriers.co.uk",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Blog",
-                item: "https://couriers.foursix46.com/blog",
+                item: "https://www.route46couriers.co.uk/blog",
               },
               ...(post.category
                 ? [
@@ -1037,7 +1036,7 @@ export default function BlogPostPage() {
                       "@type": "ListItem",
                       position: 3,
                       name: post.category,
-                      item: `https://couriers.foursix46.com/blog?category=${encodeURIComponent(post.category)}`,
+                      item: `https://www.route46couriers.co.uk/blog?category=${encodeURIComponent(post.category)}`,
                     },
                     {
                       "@type": "ListItem",
@@ -1063,11 +1062,11 @@ export default function BlogPostPage() {
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
-            "@id": "https://couriers.foursix46.com/#business",
+            "@id": "https://www.route46couriers.co.uk/#business",
             name: "FourSix46® Couriers",
-            url: "https://couriers.foursix46.com",
+            url: "https://www.route46couriers.co.uk",
             telephone: "+447393363802",
-            image: "https://couriers.foursix46.com/og-default.jpg",
+            image: "https://www.route46couriers.co.uk/og-default.jpg",
             address: {
               "@type": "PostalAddress",
               streetAddress: "66 Paul Street",

@@ -151,7 +151,10 @@ export default function ServicesPage() {
           name="description"
           content="Explore Route46 courier services — same day, next day, nationwide and more."
         />
-        <link rel="canonical" href="https://couriers.foursix46.com/services" />
+        <link
+          rel="canonical"
+          href="https://www.route46couriers.co.uk/services"
+        />
         <meta property="og:title" content="Our Services | Route46" />
         <meta
           property="og:description"
@@ -159,12 +162,12 @@ export default function ServicesPage() {
         />
         <meta
           property="og:url"
-          content="https://couriers.foursix46.com/services"
+          content="https://www.route46couriers.co.uk/services"
         />
         <meta property="og:type" content="website" />
         <meta
           property="og:image"
-          content="https://couriers.foursix46.com/og-default.jpg"
+          content="https://www.route46couriers.co.uk/og-default.jpg"
         />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -175,13 +178,13 @@ export default function ServicesPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://couriers.foursix46.com",
+                item: "https://www.route46couriers.co.uk",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Our Services",
-                item: "https://couriers.foursix46.com/services",
+                item: "https://www.route46couriers.co.uk/services",
               },
             ],
           })}

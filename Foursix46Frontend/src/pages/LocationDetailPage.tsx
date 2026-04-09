@@ -351,10 +351,8 @@ export default function LocationDetailPage() {
     !imgError && location.heroImage
       ? location.heroImage
       : "/FourSix_truckimage.jpg";
-  const canonicalUrl =
-    location.canonicalUrl ||
-    `https://couriers.foursix46.com/locations/${location.slug}`;
-  const baseUrl = "https://couriers.foursix46.com";
+  const canonicalUrl = `https://www.route46couriers.co.uk/locations/${location.slug}`;
+  const baseUrl = "https://www.route46couriers.co.uk";
 
   /* Postcode normalisation */
   let postcodes: string[] = [];
@@ -394,7 +392,8 @@ export default function LocationDetailPage() {
         <meta
           property="og:image"
           content={
-            location.ogImage || "https://couriers.foursix46.com/og-default.jpg"
+            location.ogImage ||
+            "https://www.route46couriers.co.uk/og-default.jpg"
           }
         />
         {location.noindex && <meta name="robots" content="noindex,nofollow" />}
@@ -427,13 +426,13 @@ export default function LocationDetailPage() {
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
-            "@id": "https://couriers.foursix46.com/#business",
+            "@id": "https://www.route46couriers.co.uk/#business",
             name: "FourSix46® Couriers",
-            url: "https://couriers.foursix46.com",
+            url: "https://www.route46couriers.co.uk",
             telephone: "+447393363802",
             image:
               location.ogImage ||
-              "https://couriers.foursix46.com/og-default.jpg",
+              "https://www.route46couriers.co.uk/og-default.jpg",
             description: location.seoDescription || "",
             address: {
               "@type": "PostalAddress",

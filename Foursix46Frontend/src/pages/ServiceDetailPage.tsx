@@ -1272,9 +1272,7 @@ export default function ServiceDetailPage() {
 
   const heroImage =
     !imgError && service.heroImage ? service.heroImage : "/route462.jpeg";
-  const canonicalUrl =
-    service.canonicalUrl ||
-    `https://couriers.foursix46.com/services/${service.slug}`;
+  const canonicalUrl = `https://www.route46couriers.co.uk/services/${service.slug}`;
   const vehicleTypes: string[] = Array.isArray(service.vehicleTypes)
     ? service.vehicleTypes
     : [];
@@ -1304,7 +1302,8 @@ export default function ServiceDetailPage() {
         <meta
           property="og:image"
           content={
-            service.ogImage || "https://couriers.foursix46.com/og-default.jpg"
+            service.ogImage ||
+            "https://www.route46couriers.co.uk/og-default.jpg"
           }
         />
         {service.noindex && <meta name="robots" content="noindex,nofollow" />}
@@ -1319,7 +1318,7 @@ export default function ServiceDetailPage() {
             provider: {
               "@type": "Organization",
               name: "Route46",
-              url: "https://couriers.foursix46.com",
+              url: "https://www.route46couriers.co.uk",
             },
             areaServed: "United Kingdom",
           })}
@@ -1335,13 +1334,13 @@ export default function ServiceDetailPage() {
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://couriers.foursix46.com",
+                item: "https://www.route46couriers.co.uk",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Our Services",
-                item: "https://couriers.foursix46.com/services",
+                item: "https://www.route46couriers.co.uk/services",
               },
               {
                 "@type": "ListItem",
@@ -1358,13 +1357,13 @@ export default function ServiceDetailPage() {
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
-            "@id": "https://couriers.foursix46.com/#business",
+            "@id": "https://www.route46couriers.co.uk/#business",
             name: "FourSix46® Couriers",
-            url: "https://couriers.foursix46.com",
+            url: "https://www.route46couriers.co.uk",
             telephone: "+447393363802",
             image:
               service.ogImage ||
-              "https://couriers.foursix46.com/og-default.jpg",
+              "https://www.route46couriers.co.uk/og-default.jpg",
             description: service.seoDescription || "",
             address: { "@type": "PostalAddress", addressCountry: "GB" },
             areaServed: "United Kingdom",
