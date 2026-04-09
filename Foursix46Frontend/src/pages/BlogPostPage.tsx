@@ -688,11 +688,15 @@ const WHY_CHOOSE_FEATURES = [
    TYPES
 ───────────────────────────────────────────────────────────────────────────── */
 interface ContentBlock {
-  type: "paragraph" | "heading" | "subheading" | "image" | "quote" | "list";
-  content?: string;
+  type: string;
+  heading?: string;
+  body?: string;
   items?: string[];
-  url?: string;
-  alt?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  cite?: string;
 }
 
 interface BlogPost {
@@ -717,6 +721,9 @@ interface BlogPost {
   tags?: string[];
   faqIds?: string[];
   faqHeading?: string;
+  relatedServiceSlugs?: string[];
+  relatedLocationSlugs?: string[];
+  relatedSectorSlugs?: string[];
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -724,67 +731,181 @@ interface BlogPost {
 ───────────────────────────────────────────────────────────────────────────── */
 function renderBlock(block: ContentBlock, i: number) {
   switch (block.type) {
-    case "heading":
+    case "textSection":
+    case "internalLinkSection":
       return (
-        <h2
+        <div key={i} className="my-6">
+          {block.heading && (
+            <h2 className="text-2xl md:text-3xl font-black text-[#134467] mt-10 mb-4 leading-tight">
+              {block.heading}
+            </h2>
+          )}
+          {block.body && (
+            <div
+              className="text-slate-600 leading-relaxed text-lg prose prose-slate max-w-none prose-a:text-[#E53935] prose-strong:text-[#134467]"
+              dangerouslySetInnerHTML={{ __html: block.body }}
+            />
+          )}
+        </div>
+      );
+
+    case "bulletSection":
+      return (
+        <div key={i} className="my-6">
+          {block.heading && (
+            <h2 className="text-2xl font-black text-[#134467] mb-4">
+              {block.heading}
+            </h2>
+          )}
+          <ul className="space-y-2 my-5 pl-2">
+            {(block.items ?? []).map((item, j) => (
+              <li
+                key={j}
+                className="flex items-start gap-3 text-slate-600 text-base"
+              >
+                <span className="mt-2 w-2 h-2 rounded-full bg-[#E53935] flex-shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+
+    case "imageLeftTextRight":
+    case "imageRightTextLeft":
+      return (
+        <div
           key={i}
-          className="text-2xl md:text-3xl font-black text-[#134467] mt-10 mb-4 leading-tight"
+          className={`my-8 flex flex-col md:flex-row gap-6 items-center ${
+            block.type === "imageRightTextLeft" ? "md:flex-row-reverse" : ""
+          }`}
         >
-          {block.content}
-        </h2>
+          {block.imageUrl && (
+            <figure className="md:w-1/2 shrink-0">
+              <img
+                src={block.imageUrl}
+                alt={block.imageAlt ?? ""}
+                className="w-full rounded-2xl shadow-md object-cover"
+                loading="lazy"
+              />
+              {block.imageAlt && (
+                <figcaption className="text-center text-sm text-slate-400 mt-2">
+                  {block.imageAlt}
+                </figcaption>
+              )}
+            </figure>
+          )}
+          <div className="md:w-1/2">
+            {block.heading && (
+              <h2 className="text-xl font-black text-[#134467] mb-3">
+                {block.heading}
+              </h2>
+            )}
+            {block.body && (
+              <div
+                className="text-slate-600 leading-relaxed prose prose-slate max-w-none"
+                dangerouslySetInnerHTML={{ __html: block.body }}
+              />
+            )}
+          </div>
+        </div>
       );
-    case "subheading":
+
+    case "calloutCard":
       return (
-        <h3 key={i} className="text-xl font-bold text-[#134467] mt-8 mb-3">
-          {block.content}
-        </h3>
+        <div
+          key={i}
+          className="my-6 bg-[#134467]/5 border border-[#134467]/15 rounded-2xl p-6"
+        >
+          {block.heading && (
+            <h3 className="font-black text-[#134467] text-lg mb-2">
+              {block.heading}
+            </h3>
+          )}
+          {block.body && (
+            <div
+              className="text-slate-600 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: block.body }}
+            />
+          )}
+          {block.ctaText && block.ctaUrl && (
+            <a
+              href={block.ctaUrl}
+              className="inline-block mt-4 bg-[#134467] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0d2f4a] transition-colors"
+            >
+              {block.ctaText}
+            </a>
+          )}
+        </div>
       );
-    case "paragraph":
+
+    case "ctaBanner":
       return (
-        <p key={i} className="text-slate-600 leading-relaxed text-lg mb-5">
-          {block.content}
-        </p>
+        <div
+          key={i}
+          className="my-8 bg-gradient-to-r from-[#134467] to-[#0d2f4a] text-white rounded-2xl p-8 text-center"
+        >
+          {block.heading && (
+            <h3 className="font-black text-2xl mb-3">{block.heading}</h3>
+          )}
+          {block.body && (
+            <div
+              className="text-white/80 mb-5 prose prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: block.body }}
+            />
+          )}
+          {block.ctaText && block.ctaUrl && (
+            <a
+              href={block.ctaUrl}
+              className="inline-block bg-[#E53935] text-white px-8 py-3 rounded-xl font-black hover:bg-[#c62828] transition-colors"
+            >
+              {block.ctaText}
+            </a>
+          )}
+        </div>
       );
-    case "quote":
+
+    case "quoteBlock":
       return (
         <blockquote
           key={i}
           className="border-l-4 border-[#48AEDD] pl-6 py-2 my-6 bg-[#48AEDD]/5 rounded-r-xl"
         >
+          {block.heading && (
+            <h3 className="font-black text-[#134467] mb-2">{block.heading}</h3>
+          )}
           <p className="text-slate-700 italic text-lg font-medium leading-relaxed">
-            "{block.content}"
+            "{block.body}"
           </p>
+          {block.cite && (
+            <cite className="text-sm text-slate-400 not-italic mt-2 block">
+              — {block.cite}
+            </cite>
+          )}
         </blockquote>
       );
-    case "list":
+
+    case "tableBlock":
       return (
-        <ul key={i} className="space-y-2 my-5 pl-2">
-          {(block.items ?? []).map((item, j) => (
-            <li
-              key={j}
-              className="flex items-start gap-3 text-slate-600 text-base"
-            >
-              <span className="mt-2 w-2 h-2 rounded-full bg-[#E53935] flex-shrink-0" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      );
-    case "image":
-      return block.url ? (
-        <figure key={i} className="my-8">
-          <img
-            src={block.url}
-            alt={block.alt ?? ""}
-            className="w-full rounded-2xl shadow-md object-cover"
-          />
-          {block.alt && (
-            <figcaption className="text-center text-sm text-slate-400 mt-2">
-              {block.alt}
-            </figcaption>
+        <div key={i} className="my-6 overflow-x-auto">
+          {block.heading && (
+            <h2 className="text-xl font-black text-[#134467] mb-4">
+              {block.heading}
+            </h2>
           )}
-        </figure>
-      ) : null;
+          {block.body && (
+            <div
+              className="prose prose-slate max-w-none [&_table]:w-full [&_th]:bg-[#134467] [&_th]:text-white [&_th]:p-3 [&_td]:p-3 [&_td]:border [&_td]:border-slate-200 [&_tr:nth-child(even)]:bg-slate-50"
+              dangerouslySetInnerHTML={{ __html: block.body }}
+            />
+          )}
+        </div>
+      );
+
+    case "faqSection":
+      // Inline FAQ blocks render via the global FAQ section at the bottom
+      return null;
+
     default:
       return null;
   }
@@ -1184,9 +1305,10 @@ export default function BlogPostPage() {
         >
           {/* Intro */}
           {post.intro && (
-            <p className="text-xl text-slate-700 font-medium leading-relaxed mb-8 border-l-4 border-[#E53935] pl-5">
-              {post.intro}
-            </p>
+            <div
+              className="text-xl text-slate-700 font-medium leading-relaxed mb-8 border-l-4 border-[#E53935] pl-5 prose prose-slate max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.intro }}
+            />
           )}
 
           {/* Content Blocks */}
@@ -1212,6 +1334,77 @@ export default function BlogPostPage() {
             </div>
           )}
         </motion.div>
+        {/* ══════════════════════════════════════════════════
+    RELATED CONTENT LINKS (from Relations tab)
+══════════════════════════════════════════════════ */}
+        {((post.relatedServiceSlugs?.length ?? 0) > 0 ||
+          (post.relatedLocationSlugs?.length ?? 0) > 0 ||
+          (post.relatedSectorSlugs?.length ?? 0) > 0) && (
+          <div className="mt-10 pt-6 border-t border-slate-100 space-y-5">
+            <h3 className="text-sm font-black uppercase tracking-widest text-[#134467]/50">
+              Related Content
+            </h3>
+
+            {post.relatedServiceSlugs &&
+              post.relatedServiceSlugs.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-[#134467] uppercase tracking-wider mb-2">
+                    Services
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {post.relatedServiceSlugs.map((slug) => (
+                      <a
+                        key={slug}
+                        href={`/services/${slug}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#134467]/20 text-xs font-semibold text-[#134467] hover:bg-[#134467] hover:text-white transition-colors"
+                      >
+                        {slug.replace(/-/g, " ")}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {post.relatedLocationSlugs &&
+              post.relatedLocationSlugs.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-[#134467] uppercase tracking-wider mb-2">
+                    Locations
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {post.relatedLocationSlugs.map((slug) => (
+                      <a
+                        key={slug}
+                        href={`/locations/${slug}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#48AEDD]/30 text-xs font-semibold text-[#48AEDD] hover:bg-[#48AEDD] hover:text-white transition-colors"
+                      >
+                        {slug.replace(/-/g, " ")}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {post.relatedSectorSlugs && post.relatedSectorSlugs.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-[#134467] uppercase tracking-wider mb-2">
+                  Sectors
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {post.relatedSectorSlugs.map((slug) => (
+                    <a
+                      key={slug}
+                      href={`/sectors/${slug}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E53935]/20 text-xs font-semibold text-[#E53935] hover:bg-[#E53935] hover:text-white transition-colors"
+                    >
+                      {slug.replace(/-/g, " ")}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════════
             RELATED POSTS
