@@ -221,36 +221,36 @@ export default defineConfig(({ mode }) => ({
     // Priority: page-level Helmet canonical (set in each page component) wins
     // over this fallback because it's injected BEFORE </head>. If Helmet ever
     // starts injecting link tags, this safely deduplicates by checking first.
-    onPageRendered(route: string, html: string): string {
-      // Skip admin and non-public routes
-      if (EXCLUDED_ROUTES.has(route) || route.startsWith("/admin")) {
-        return html;
-      }
+    // onPageRendered(route: string, html: string): string {
+    //   // Skip admin and non-public routes
+    //   if (EXCLUDED_ROUTES.has(route) || route.startsWith("/admin")) {
+    //     return html;
+    //   }
 
-      // Normalise: remove trailing slash (except root "/")
-      const cleanRoute =
-        route.endsWith("/") && route !== "/" ? route.slice(0, -1) : route;
+    //   // Normalise: remove trailing slash (except root "/")
+    //   const cleanRoute =
+    //     route.endsWith("/") && route !== "/" ? route.slice(0, -1) : route;
 
-      const canonical = `${BASE_URL}${cleanRoute}`;
+    //   const canonical = `${BASE_URL}${cleanRoute}`;
 
-      // If canonical already exists (injected by Helmet), replace it to ensure
-      // correct www + trailing-slash normalisation.
-      if (
-        html.includes('rel="canonical"') ||
-        html.includes("rel='canonical'")
-      ) {
-        return html.replace(
-          /<link\s[^>]*rel=["']canonical["'][^>]*\/?>/i,
-          `<link rel="canonical" href="${canonical}" />`,
-        );
-      }
+    //   // If canonical already exists (injected by Helmet), replace it to ensure
+    //   // correct www + trailing-slash normalisation.
+    //   if (
+    //     html.includes('rel="canonical"') ||
+    //     html.includes("rel='canonical'")
+    //   ) {
+    //     return html.replace(
+    //       /<link\s[^>]*rel=["']canonical["'][^>]*\/?>/i,
+    //       `<link rel="canonical" href="${canonical}" />`,
+    //     );
+    //   }
 
-      // Not present — inject just before </head>
-      return html.replace(
-        "</head>",
-        `  <link rel="canonical" href="${canonical}" />\n</head>`,
-      );
-    },
+    //   // Not present — inject just before </head>
+    //   return html.replace(
+    //     "</head>",
+    //     `  <link rel="canonical" href="${canonical}" />\n</head>`,
+    //   );
+    // },
   },
 
   // ── Path aliases ────────────────────────────────────────────────────────────
