@@ -17,8 +17,7 @@ export default defineConfig(({ mode }) => ({
 
   // ── ssgOptions is the CORRECT place for includedRoutes ───────────────────
   ssgOptions: {
-  async includedRoutes(paths: string[]) {
-    // ── Step 1: filter out private/admin routes ──────────────────
+  includedRoutes(paths: string[]): Promise<string[]> {
     const filtered = paths.filter(
       (p) =>
         p !== "admin/login" &&
@@ -29,50 +28,52 @@ export default defineConfig(({ mode }) => ({
         p !== "/send-parcel",
     );
 
-    // ── Step 2: fetch dynamic paths from API ─────────────────────
     const apiUrl = process.env.VITE_API_URL;
     if (!apiUrl) {
       console.warn("[SSG] VITE_API_URL is not set — skipping dynamic routes");
-      return filtered;
+      return Promise.resolve(filtered);
     }
 
-    try {
-      const [services, sectors, locations, blogs]: [any, any, any, any] = await Promise.all([
-        fetch(`${apiUrl}/api/services`).then((r) => r.json()),
-        fetch(`${apiUrl}/api/sectors`).then((r) => r.json()),
-        fetch(`${apiUrl}/api/locations`).then((r) => r.json()),
-        fetch(`${apiUrl}/api/blogs`).then((r) => r.json()),
-      ]);
+    // Safe fetch — never throws, returns null on non-JSON or error responses
+    const safeFetch = async (url: string) => {
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const data = JSON.parse(text);
+        console.log(`[SSG] ✅ ${url} → ${(data?.data || data)?.length ?? 0} items`);
+        return data;
+      } catch (e) {
+        console.error(`[SSG] ❌ Failed to fetch ${url}:`, e);
+        return null;
+      }
+    };
 
-      const svcs: { slug: string }[] = services?.data  || services  || [];
-      const scts: { slug: string }[] = sectors?.data   || sectors   || [];
-      const locs: { slug: string }[] = locations?.data || locations || [];
-      const blgs: { slug: string }[] = blogs?.data     || blogs     || [];
-
-      const servicePaths         = svcs.map((s) => `/services/${s.slug}`);
-      const sectorPaths          = scts.map((s) => `/sectors/${s.slug}`);
-      const locationPaths        = locs.map((l) => `/locations/${l.slug}`);
-      const blogPaths            = blgs.map((b) => `/blog/${b.slug}`);
-      const locationServicePaths = locs.flatMap((l) =>
-        svcs.map((s) => `/locations/${l.slug}/${s.slug}`),
-      );
+    return Promise.all([
+      safeFetch(`${apiUrl}/api/services`),
+      safeFetch(`${apiUrl}/api/sectors`),
+      safeFetch(`${apiUrl}/api/locations`),
+      safeFetch(`${apiUrl}/api/blogs`),
+    ]).then(([services, sectors, locations, blogs]) => {
+      const svcs = services?.data  || services  || [];
+      const scts = sectors?.data   || sectors   || [];
+      const locs = locations?.data || locations || [];
+      const blgs = blogs?.data     || blogs     || [];
 
       console.log(
-        `[SSG] Dynamic routes → services:${svcs.length}  sectors:${scts.length}  locations:${locs.length}  blogs:${blgs.length}  loc×svc:${locationServicePaths.length}`,
+        `[SSG] Dynamic routes → services:${svcs.length}  sectors:${scts.length}  locations:${locs.length}  blogs:${blgs.length}  loc×svc:${locs.length * svcs.length}`,
       );
 
       return [
         ...filtered,
-        ...servicePaths,
-        ...sectorPaths,
-        ...locationPaths,
-        ...blogPaths,
-        ...locationServicePaths,
+        ...svcs.map((s: any) => `/services/${s.slug}`),
+        ...scts.map((s: any) => `/sectors/${s.slug}`),
+        ...locs.map((l: any) => `/locations/${l.slug}`),
+        ...blgs.map((b: any) => `/blog/${b.slug}`),
+        ...locs.flatMap((l: any) =>
+          svcs.map((s: any) => `/locations/${l.slug}/${s.slug}`)
+        ),
       ];
-    } catch (e) {
-      console.error("[SSG] includedRoutes fetch failed:", e);
-      return filtered; // graceful fallback — static pages still render
-    }
+    });
   },
 },
 
