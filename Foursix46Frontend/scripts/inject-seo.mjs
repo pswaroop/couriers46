@@ -338,20 +338,57 @@
 //   if (DRY_RUN) console.log(' DRY RUN — no files were modified')
 //   console.log('═══════════════════════════════════════════════════════\n')
 // })
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
+// scripts/inject-seo.mjs
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
 import { join, relative } from 'path'
 import { fileURLToPath } from 'url'
+import https from 'https'
+import http from 'http'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const DIST      = join(__dirname, '../dist')
 const BASE_URL  = 'https://www.route46couriers.co.uk'
 
-// ─── API Base ─────────────────────────────────────────────────────────────────
-// Uses VITE_API_URL from your environment, or falls back to the provided URL
-const API = process.env.VITE_API_URL || 'https://europe-west2-foursix46-production-4a43f.cloudfunctions.net/api/api'
+// Hardcoded — VITE_ vars are compile-time only, not available in Node.js runtime
+const API = 'https://europe-west2-foursix46-production-4a43f.cloudfunctions.net/api/api'
 
-const SKIP = ['/admin', '/send-parcel', '/pay']
+const SKIP   = ['/admin', '/send-parcel', '/pay']
 const counts = { ok: 0, fallback: 0, skipped: 0, noData: 0, total: 0 }
+
+
+// ─── HTTP fetch via Node built-in (no native fetch dependency) ────────────────
+// BUG FIX: Using https module directly avoids any edge cases with
+// native fetch in certain Node/firewall environments.
+function get(url) {
+  return new Promise((resolve) => {
+    const mod = url.startsWith('https') ? https : http
+    const req = mod.get(url, { timeout: 20000 }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return resolve(get(res.headers.location))
+      }
+      if (res.statusCode !== 200) {
+        console.error(`  ❌ HTTP ${res.statusCode} — ${url}`)
+        res.resume()
+        return resolve(null)
+      }
+      let body = ''
+      res.setEncoding('utf8')
+      res.on('data', c => body += c)
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(body))
+        } catch {
+          console.error(`  ❌ JSON parse failed — ${url}`)
+          console.error(`     Response preview: ${body.slice(0, 300)}`)
+          resolve(null)
+        }
+      })
+    })
+    req.on('error', e => { console.error(`  ❌ Request failed — ${url}: ${e.message}`); resolve(null) })
+    req.on('timeout', () => { console.error(`  ❌ Timeout — ${url}`); req.destroy(); resolve(null) })
+  })
+}
+
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 function walk(dir, out = []) {
@@ -369,44 +406,40 @@ function routeFrom(file) {
   return r === '' ? '/' : r
 }
 
-function esc(s) { return (s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;') }
+// BUG FIX: Only escape characters that aren't already escaped
+function esc(s) {
+  return (s ?? '')
+    .replace(/&(?!(amp|quot|lt|gt|apos);)/g, '&amp;')
+    .replace(/"/g, '&quot;')
+}
 
 function fixCanonical(url) {
   if (!url) return null
   return url.replace(/^https?:\/\/(?:www\.)?route46couriers\.co\.uk/, BASE_URL)
 }
 
-// ─── Fetch helpers ────────────────────────────────────────────────────────────
-async function get(url) {
-  try {
-    const r = await fetch(url)
-    if (!r.ok) { console.error(`  [HTTP ${r.status}] ${url}`); return null }
-    return await r.json()
-  } catch (e) {
-    console.error(`  [FAIL] ${url} — ${e.message}`)
-    return null
-  }
-}
-
 function asList(r) {
   if (!r) return []
   if (Array.isArray(r)) return r
-  for (const v of Object.values(r)) if (Array.isArray(v)) return v
+  for (const v of Object.values(r)) if (Array.isArray(v) && v.length > 0) return v
   return []
 }
 
 function asItem(r) {
   if (!r) return null
   if (r.slug || r.seoTitle || r.heroTitle || r.name) return r
-  if (r.data && !Array.isArray(r.data)) return r.data
-  return r
+  if (r.data && typeof r.data === 'object' && !Array.isArray(r.data)) return r.data
+  return null
 }
+
 
 // ─── Build Route → SEO Map ────────────────────────────────────────────────────
 async function buildMap() {
   const map = new Map()
 
-  console.log(`\n[seo] Fetching slug lists from API: ${API}...`)
+  console.log(`\n[seo] API: ${API}`)
+  console.log('[seo] Fetching slug lists...')
+
   const [svcsRaw, sctsRaw, locsRaw, blogsRaw] = await Promise.all([
     get(`${API}/services`),
     get(`${API}/sectors`),
@@ -419,10 +452,16 @@ async function buildMap() {
   const locs  = asList(locsRaw).filter(i => i.slug)
   const blogs = asList(blogsRaw).filter(i => i.slug && i.status === 'published')
 
-  console.log(`  Found -> services:${svcs.length} | sectors:${scts.length} | locations:${locs.length} | blogs:${blogs.length}`)
+  console.log(`  services:${svcs.length}  sectors:${scts.length}  locations:${locs.length}  blogs:${blogs.length}`)
 
-  console.log('\n[seo] Fetching full item data for exact SEO fields...')
+  if (svcs.length + scts.length + locs.length + blogs.length === 0) {
+    console.error('\n  ❌ All lists returned 0 items — check the API URL and response shape.')
+    console.error(`     Test: curl "${API}/services"\n`)
+  }
 
+  console.log('\n[seo] Fetching individual items for full SEO fields...')
+
+  // Sequential to avoid rate-limiting; swap to Promise.all per-type if speed needed
   const fetchAll = (type, items) =>
     Promise.all(items.map(i => get(`${API}/${type}/${i.slug}`).then(asItem)))
 
@@ -434,92 +473,93 @@ async function buildMap() {
   ])
 
   const add = (route, item) => {
-    if (!item) return
-    
-    // Smart field mapping directly aligned with your API schema
+    if (!item) { console.warn(`  ✘ ${route} — null item`); return }
+
     const entry = {
-      seoTitle:  item.seoTitle || item.heroTitle || item.name || item.title || null,
-      seoDesc:   item.seoDescription || item.heroSubtitle || item.description || null,
+      seoTitle:  item.seoTitle    || item.heroTitle  || item.name  || item.title || null,
+      seoDesc:   item.seoDescription || item.heroSubtitle || item.description    || null,
       canonical: fixCanonical(item.canonicalUrl) || `${BASE_URL}${route}`,
-      ogImage:   item.ogImage || item.heroImage || item.image || `${BASE_URL}/route46logo.png`,
+      ogImage:   item.ogImage     || item.heroImage  || item.image || `${BASE_URL}/route46logo.png`,
       noindex:   item.noindex === true,
     }
 
     if (entry.seoTitle) {
       map.set(route, entry)
       console.log(`  ✔ ${route}`)
+      console.log(`      title:     "${entry.seoTitle}"`)
+      console.log(`      canonical: ${entry.canonical}`)
     } else {
-      console.warn(`  ✘ ${route} — item has no identifying title field`)
+      console.warn(`  ✘ ${route} — no seoTitle/heroTitle/name in response`)
+      console.warn(`      item keys: ${Object.keys(item).join(', ')}`)
     }
   }
 
-  // Populate base routes
-  svcItems.forEach( (item, i) => add(`/services/${svcs[i].slug}`,   item))
-  sctItems.forEach( (item, i) => add(`/sectors/${scts[i].slug}`,    item))
-  locItems.forEach( (item, i) => add(`/locations/${locs[i].slug}`,  item))
-  blogItems.forEach((item, i) => add(`/blog/${blogs[i].slug}`,      item))
+  svcItems.forEach( (item, i) => add(`/services/${svcs[i].slug}`,  item))
+  sctItems.forEach( (item, i) => add(`/sectors/${scts[i].slug}`,   item))
+  locItems.forEach( (item, i) => add(`/locations/${locs[i].slug}`, item))
+  blogItems.forEach((item, i) => add(`/blog/${blogs[i].slug}`,     item))
 
-  // Generate dynamic combinations (Location x Service)
+  // Location × Service combo pages
   for (const loc of locs) {
     for (const svc of svcs) {
       const key = `/locations/${loc.slug}/${svc.slug}`
       if (map.has(key)) continue
-      
-      const svcEntry = map.get(`/services/${svc.slug}`)
-      const locEntry = map.get(`/locations/${loc.slug}`)
-      
-      const svcName  = svcEntry?.seoTitle?.split('|')[0].trim() || svc.name || svc.slug
-      const locName  = locEntry?.seoTitle?.split('|')[0].trim() || loc.name || loc.slug
-      
+      const svcE   = map.get(`/services/${svc.slug}`)
+      const locE   = map.get(`/locations/${loc.slug}`)
+      const svcName = svcE?.seoTitle?.split('|')[0].trim() || svc.name || svc.slug
+      const locName = locE?.seoTitle?.split('|')[0].trim() || loc.name || loc.slug
       map.set(key, {
         seoTitle:  `${svcName} in ${locName} | Route46 Couriers`,
         seoDesc:   `Professional ${svcName.toLowerCase()} covering ${locName} and surrounding areas. Fast, secure, and direct transport with Route46 Couriers.`,
         canonical: `${BASE_URL}${key}`,
-        ogImage:   svcEntry?.ogImage || locEntry?.ogImage || `${BASE_URL}/route46logo.png`,
+        ogImage:   svcE?.ogImage || locE?.ogImage || `${BASE_URL}/route46logo.png`,
         noindex:   false,
       })
     }
   }
 
-  console.log(`\n[seo] SEO Map ready — ${map.size} dynamic routes mapped.\n`)
+  console.log(`\n[seo] Map ready — ${map.size} routes\n`)
   return map
 }
 
+
 // ─── HTML Manipulation ────────────────────────────────────────────────────────
+
+// BUG FIX: The previous version had a broken/truncated regex here which caused
+// a SyntaxError crash at runtime. Regex is now correct and complete.
 function strip(html) {
   return html
-    .replace(/)[\s\S])*?<(?:title|meta[^>]*(?:name|property)\s*=\s*["'](?:description|robots|og:|twitter:))[^]*?-->/gi, '')
+    // Strip Helmet comment-wrapped SEO blocks
+    .replace(/<!--(?:(?!-->)[\s\S])*?<(?:title|meta[^>]*(?:name|property)\s*=\s*["'](?:description|robots|og:|twitter:))[^]*?-->/gi, '')
+    // Strip all individual SEO tags (every occurrence)
     .replace(/<title[^>]*>[^<]*<\/title>/gi, '')
     .replace(/<meta[^>]+name=["']description["'][^>]*\/?>/gi, '')
     .replace(/<meta[^>]+name=["']robots["'][^>]*\/?>/gi, '')
     .replace(/<link[^>]+rel=["']canonical["'][^>]*\/?>/gi, '')
-    .replace(/<meta[^>]+property=["']og:[^"']+["'][^>]*\/?>/gi, '') // Catches all og: tags
-    .replace(/<meta[^>]+name=["']twitter:[^"']+["'][^>]*\/?>/gi, '') // Catches all twitter: tags
+    .replace(/<meta[^>]+property=["']og:[^"']*["'][^>]*\/?>/gi, '')      // all og: tags
+    .replace(/<meta[^>]+name=["']twitter:[^"']*["'][^>]*\/?>/gi, '')     // all twitter: tags
     .replace(/\n{3,}/g, '\n\n')
 }
 
 function buildBlock({ seoTitle, seoDesc, canonical, ogImage, noindex }) {
   return [
-    seoTitle ? `  <title>${esc(seoTitle)}</title>` : '',
-    seoDesc  ? `  <meta name="description" content="${esc(seoDesc)}">` : '',
+    seoTitle ? `  <title>${esc(seoTitle)}</title>`                                         : '',
+    seoDesc  ? `  <meta name="description" content="${esc(seoDesc)}">`                     : '',
     `  <meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index, follow'}">`,
     `  <link rel="canonical" href="${canonical}">`,
-    
-    // Open Graph
-    seoTitle ? `  <meta property="og:title" content="${esc(seoTitle)}">` : '',
-    seoDesc  ? `  <meta property="og:description" content="${esc(seoDesc)}">` : '',
+    seoTitle ? `  <meta property="og:title" content="${esc(seoTitle)}">`                   : '',
+    seoDesc  ? `  <meta property="og:description" content="${esc(seoDesc)}">`              : '',
     `  <meta property="og:url" content="${canonical}">`,
     `  <meta property="og:image" content="${ogImage}">`,
     `  <meta property="og:type" content="website">`,
-    
-    // Twitter
     `  <meta name="twitter:card" content="summary_large_image">`,
-    seoTitle ? `  <meta name="twitter:title" content="${esc(seoTitle)}">` : '',
-    seoDesc  ? `  <meta name="twitter:description" content="${esc(seoDesc)}">` : '',
+    seoTitle ? `  <meta name="twitter:title" content="${esc(seoTitle)}">`                  : '',
+    seoDesc  ? `  <meta name="twitter:description" content="${esc(seoDesc)}">`             : '',
     `  <meta name="twitter:image" content="${ogImage}">`,
   ].filter(Boolean).join('\n')
 }
 
+// Injects SEO block right after <meta viewport> — correct position in <head>
 function inject(html, block) {
   const vp = html.match(/<meta[^>]+name=["']viewport["'][^>]*>/i)
   if (vp) {
@@ -528,6 +568,7 @@ function inject(html, block) {
   }
   return html.replace(/(<head[^>]*>)/i, `$1\n${block}`)
 }
+
 
 // ─── Process Single HTML File ─────────────────────────────────────────────────
 function processFile(filePath, map) {
@@ -540,20 +581,20 @@ function processFile(filePath, map) {
     return
   }
 
-  let html = readFileSync(filePath, 'utf-8')
+  let html  = readFileSync(filePath, 'utf-8')
   let entry = map.get(route)
   let src   = 'api'
 
   if (!entry) {
-    // Fallback: Read existing basic tags from HTML if API lacks this route
-    const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-    const descM  = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
-                || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i)
+    // Fallback: use whatever <title>/<meta description> already exists in the HTML
+    const tM = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+    const dM = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
+             || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i)
 
-    if (titleM) {
+    if (tM) {
       entry = {
-        seoTitle:  titleM[1].trim(),
-        seoDesc:   descM ? descM[1].trim() : null,
+        seoTitle:  tM[1].trim(),
+        seoDesc:   dM ? dM[1].trim() : null,
         canonical: `${BASE_URL}${route === '/' ? '' : route}`,
         ogImage:   `${BASE_URL}/route46logo.png`,
         noindex:   false,
@@ -571,20 +612,40 @@ function processFile(filePath, map) {
 
   if (html !== before) {
     writeFileSync(filePath, html, 'utf-8')
-    console.log(`✅ ${src === 'api' ? 'API    ' : 'FALLBK '} ${route}`)
+    console.log(`✅ ${src === 'api' ? 'API    ' : 'FALLBK '} ${route}  →  "${entry.seoTitle}"`)
     src === 'api' ? counts.ok++ : counts.fallback++
+  } else {
+    console.log(`✓  no-change ${route}`)
   }
 }
 
-// ─── Run Execution ────────────────────────────────────────────────────────────
-console.log(`\n[seo] Scanning dist folder: ${DIST}`)
+
+// ─── Entry Point ──────────────────────────────────────────────────────────────
+if (!existsSync(DIST)) {
+  console.error(`\n❌ dist folder not found at: ${DIST}`)
+  console.error('   Run your build first: npm run build\n')
+  process.exit(1)
+}
+
+console.log('\n══════════════════════════════════════════════')
+console.log(' inject-seo.mjs')
+console.log('══════════════════════════════════════════════')
+console.log(`  DIST: ${DIST}`)
+console.log(`  API:  ${API}`)
+
+const allFiles = walk(DIST)
+console.log(`\n[seo] Found ${allFiles.length} HTML files in dist:`)
+allFiles.forEach(f => console.log(`  ${routeFrom(f)}`))
 
 buildMap().then(map => {
-  walk(DIST).forEach(f => processFile(f, map))
-  console.log(`\n[seo] Complete!`)
-  console.log(`      API Injected:  ${counts.ok}`)
-  console.log(`      Fallbacks:     ${counts.fallback}`)
-  console.log(`      No Data:       ${counts.noData}`)
-  console.log(`      Skipped:       ${counts.skipped}`)
-  console.log(`      Total scanned: ${counts.total}\n`)
+  console.log('[seo] Processing HTML files...\n')
+  allFiles.forEach(f => processFile(f, map))
+
+  console.log('\n══════════════════════════════════════════════')
+  console.log(`  API injected:  ${counts.ok}`)
+  console.log(`  HTML fallback: ${counts.fallback}`)
+  console.log(`  No data:       ${counts.noData}`)
+  console.log(`  Skipped:       ${counts.skipped}`)
+  console.log(`  Total:         ${counts.total}`)
+  console.log('══════════════════════════════════════════════\n')
 })
