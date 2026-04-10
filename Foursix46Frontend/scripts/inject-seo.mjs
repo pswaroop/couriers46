@@ -234,14 +234,42 @@
 //   `\n[seo] TIP: If you see "no-data" for CMS pages, the JSON.parse format changed.\n` +
 //   `      Add a console.log(html.slice(html.indexOf('staticRouterHydration'), html.indexOf('</script>', html.indexOf('staticRouterHydration')))) in processFile to inspect the raw script block.`
 // )
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
-import { join, relative } from 'path'
+// scripts/inject-seo.mjs
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
+import { join, relative, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const DIST      = join(__dirname, '../dist')
-const BASE_URL  = 'https://www.route46couriers.co.uk'
-const API_URL   = process.env.VITE_API_URL || ''
+
+// ─── Load .env file manually (Vite env vars are NOT auto-loaded in Node.js) ──
+// This is the #1 reason VITE_API_URL is undefined at script runtime.
+function loadEnv() {
+  const envPath = join(__dirname, '../.env')
+  const envLocalPath = join(__dirname, '../.env.local')
+  for (const p of [envLocalPath, envPath]) {
+    if (!existsSync(p)) continue
+    const lines = readFileSync(p, 'utf-8').split('\n')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const eqIdx = trimmed.indexOf('=')
+      if (eqIdx === -1) continue
+      const key = trimmed.slice(0, eqIdx).trim()
+      const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '')
+      if (!(key in process.env)) process.env[key] = val
+    }
+    console.log(`[seo] Loaded env from: ${p}`)
+  }
+}
+loadEnv()
+
+const DIST     = join(__dirname, '../dist')
+const BASE_URL = 'https://www.route46couriers.co.uk'
+
+// FIX: VITE_API_URL already contains the /api prefix
+// e.g. https://europe-west2-xxx.cloudfunctions.net/api
+// So endpoint paths must NOT repeat /api — just /services, /sectors etc.
+const API_URL  = (process.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const SKIP_PREFIXES = ['/admin', '/send-parcel', '/pay']
 const counts = { injected: 0, replaced: 0, skipped: 0, noData: 0, total: 0 }
@@ -256,8 +284,6 @@ function walk(dir, out = []) {
   return out
 }
 
-
-// ─── routeFrom ────────────────────────────────────────────────────────────────
 function routeFrom(file) {
   const rel = relative(DIST, file).replace(/\\/g, '/')
   if (rel === 'index.html') return '/'
@@ -267,121 +293,152 @@ function routeFrom(file) {
 
 
 // ─── Canonical normalizer ─────────────────────────────────────────────────────
-// FIX: API stores canonicalUrl as https://route46couriers.co.uk/... (no www).
-// Normalise to always use www to match BASE_URL and avoid split-canonicals.
 function normalizeCanonical(url) {
   if (!url) return null
   return url
-    .replace(/^https?:\/\/route46couriers\.co\.uk/, `${BASE_URL}`)
-    .replace(/^https?:\/\/www\.route46couriers\.co\.uk/, `${BASE_URL}`)
+    .replace(/^https?:\/\/(?:www\.)?route46couriers\.co\.uk/, BASE_URL)
 }
 
 
-// ─── API helpers ─────────────────────────────────────────────────────────────
+// ─── API helpers ──────────────────────────────────────────────────────────────
 async function safeFetch(url) {
   try {
+    console.log(`[seo]   GET ${url}`)
     const res = await fetch(url)
-    if (!res.ok) { console.warn(`[seo] API ${url} → HTTP ${res.status}`); return null }
+    if (!res.ok) {
+      console.warn(`[seo]   ↳ HTTP ${res.status} ${res.statusText}`)
+      return null
+    }
     return await res.json()
   } catch (e) {
-    console.warn(`[seo] fetch failed: ${url} —`, e.message)
+    console.warn(`[seo]   ↳ fetch error: ${e.message}`)
     return null
   }
 }
 
-function normalizeList(r) {
-  return Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []
+// Unwrap response — handles both { data: [...] } and plain [...]
+function unwrapList(r) {
+  if (!r) return []
+  if (Array.isArray(r)) return r
+  if (Array.isArray(r.data)) return r.data
+  if (Array.isArray(r.services)) return r.services
+  if (Array.isArray(r.sectors)) return r.sectors
+  if (Array.isArray(r.locations)) return r.locations
+  if (Array.isArray(r.blogs)) return r.blogs
+  if (Array.isArray(r.posts)) return r.posts
+  // last resort: find the first array value
+  for (const v of Object.values(r)) {
+    if (Array.isArray(v)) return v
+  }
+  return []
 }
 
-// Map a fully-fetched individual API item into a standard SEO entry.
-// FIX: list endpoints omit seoTitle/seoDescription/canonicalUrl/ogImage —
-// only the individual item endpoint (/api/services/:slug etc.) returns them.
+function unwrapItem(r) {
+  if (!r) return null
+  // Single item responses: { data: {...} } or the item directly
+  if (r.slug || r.seoTitle || r.heroTitle) return r
+  if (r.data && typeof r.data === 'object' && !Array.isArray(r.data)) return r.data
+  return r
+}
+
 function toSeoEntry(item) {
+  if (!item) return null
   return {
-    seoTitle:       item.seoTitle       || item.heroTitle    || item.name   || null,
-    seoDescription: item.seoDescription || item.description                 || null,
+    seoTitle:       item.seoTitle       || item.heroTitle    || item.name   || item.title || null,
+    seoDescription: item.seoDescription || item.description                               || null,
     noindex:        item.noindex === true,
-    ogImage:        item.ogImage        || item.heroImage    || item.image  || null,
-    // Normalise www — CMS sometimes stores without www prefix
+    ogImage:        item.ogImage        || item.heroImage    || item.image                || null,
     canonicalUrl:   item.canonicalUrl ? normalizeCanonical(item.canonicalUrl) : null,
   }
 }
 
 
-// ─── API route map ────────────────────────────────────────────────────────────
-// Strategy:
-//   1. Fetch each list endpoint to discover slugs
-//   2. Fetch EVERY individual item in parallel to get full SEO fields
-//   3. Build route → SEO map from individual item responses
+// ─── Build API route map ──────────────────────────────────────────────────────
+// FIX: endpoint paths use NO extra /api prefix — it's already in VITE_API_URL.
+// Wrong (old): ${API_URL}/api/services  →  .../api/api/services  ❌
+// Correct:     ${API_URL}/services      →  .../api/services      ✅
 async function buildRouteMap() {
   const map = new Map()
 
   if (!API_URL) {
-    console.warn('[seo] ⚠️  VITE_API_URL not set — dynamic-route SEO will show as no-data.')
+    console.warn('\n[seo] ⚠️  VITE_API_URL is not set.')
+    console.warn('[seo]     The script will fall back to existing <title>/<meta description> in each HTML file.')
+    console.warn('[seo]     Set VITE_API_URL in your .env file, e.g.:')
+    console.warn('[seo]     VITE_API_URL=https://europe-west2-xxx.cloudfunctions.net/api\n')
     return map
   }
 
-  // Step 1: lists (for slugs only)
-  console.log('[seo] Fetching slug lists...')
+  console.log(`[seo] API base: ${API_URL}`)
+  console.log('[seo] Fetching slug lists...\n')
+
+  // Step 1: fetch all four list endpoints
   const [rawSvcs, rawScts, rawLocs, rawBlgs] = await Promise.all([
-    safeFetch(`${API_URL}/api/services`),
-    safeFetch(`${API_URL}/api/sectors`),
-    safeFetch(`${API_URL}/api/locations`),
-    safeFetch(`${API_URL}/api/blog`),
+    safeFetch(`${API_URL}/services`),
+    safeFetch(`${API_URL}/sectors`),
+    safeFetch(`${API_URL}/locations`),
+    safeFetch(`${API_URL}/blog`),
   ])
 
-  const svcList = normalizeList(rawSvcs)
-  const sctList = normalizeList(rawScts)
-  const locList = normalizeList(rawLocs)
-  const blgList = normalizeList(rawBlgs).filter(b => b.status === 'published' && b.slug)
+  const svcList = unwrapList(rawSvcs).filter(i => i.slug)
+  const sctList = unwrapList(rawScts).filter(i => i.slug)
+  const locList = unwrapList(rawLocs).filter(i => i.slug)
+  const blgList = unwrapList(rawBlgs).filter(i => i.slug && i.status === 'published')
 
-  const svcSlugs = svcList.filter(i => i.slug).map(i => i.slug)
-  const sctSlugs = sctList.filter(i => i.slug).map(i => i.slug)
-  const locSlugs = locList.filter(i => i.slug).map(i => i.slug)
-  const blgSlugs = blgList.map(i => i.slug)
+  console.log(`\n[seo] Lists: ${svcList.length} services, ${sctList.length} sectors, ${locList.length} locations, ${blgList.length} blogs`)
+  console.log('[seo] Fetching individual items for full SEO fields...\n')
 
-  console.log(`[seo] Found: ${svcSlugs.length} services, ${sctSlugs.length} sectors, ${locSlugs.length} locations, ${blgSlugs.length} blog posts`)
-  console.log('[seo] Fetching individual items for full SEO data...')
-
-  // Step 2: individual items in parallel (full SEO fields only on these endpoints)
+  // Step 2: fetch every individual item in parallel
   const fetchItem = async (type, slug) => {
-    const json = await safeFetch(`${API_URL}/api/${type}/${slug}`)
-    if (!json) return null
-    return json?.data ?? json
+    const raw = await safeFetch(`${API_URL}/${type}/${slug}`)
+    return unwrapItem(raw)
   }
 
   const [svcItems, sctItems, locItems, blgItems] = await Promise.all([
-    Promise.all(svcSlugs.map(s => fetchItem('services', s))),
-    Promise.all(sctSlugs.map(s => fetchItem('sectors', s))),
-    Promise.all(locSlugs.map(s => fetchItem('locations', s))),
-    Promise.all(blgSlugs.map(s => fetchItem('blog', s))),
+    Promise.all(svcList.map(i => fetchItem('services', i.slug))),
+    Promise.all(sctList.map(i => fetchItem('sectors', i.slug))),
+    Promise.all(locList.map(i => fetchItem('locations', i.slug))),
+    Promise.all(blgList.map(i => fetchItem('blog', i.slug))),
   ])
 
-  // Step 3: populate map from individual items
-  svcItems.forEach((item, i) => {
-    if (item) map.set(`/services/${svcSlugs[i]}`, toSeoEntry(item))
+  // Step 3: populate map
+  svcItems.forEach((item, idx) => {
+    const entry = toSeoEntry(item)
+    if (entry?.seoTitle) {
+      map.set(`/services/${svcList[idx].slug}`, entry)
+      console.log(`[seo]   ✔ /services/${svcList[idx].slug} → "${entry.seoTitle}"`)
+    }
   })
-  sctItems.forEach((item, i) => {
-    if (item) map.set(`/sectors/${sctSlugs[i]}`, toSeoEntry(item))
+  sctItems.forEach((item, idx) => {
+    const entry = toSeoEntry(item)
+    if (entry?.seoTitle) {
+      map.set(`/sectors/${sctList[idx].slug}`, entry)
+      console.log(`[seo]   ✔ /sectors/${sctList[idx].slug} → "${entry.seoTitle}"`)
+    }
   })
-  locItems.forEach((item, i) => {
-    if (item) map.set(`/locations/${locSlugs[i]}`, toSeoEntry(item))
+  locItems.forEach((item, idx) => {
+    const entry = toSeoEntry(item)
+    if (entry?.seoTitle) {
+      map.set(`/locations/${locList[idx].slug}`, entry)
+      console.log(`[seo]   ✔ /locations/${locList[idx].slug} → "${entry.seoTitle}"`)
+    }
   })
-  blgItems.forEach((item, i) => {
-    if (item) map.set(`/blog/${blgSlugs[i]}`, toSeoEntry(item))
+  blgItems.forEach((item, idx) => {
+    const entry = toSeoEntry(item)
+    if (entry?.seoTitle) {
+      map.set(`/blog/${blgList[idx].slug}`, entry)
+      console.log(`[seo]   ✔ /blog/${blgList[idx].slug} → "${entry.seoTitle}"`)
+    }
   })
 
   // Step 4: location × service combos
-  // Use already-fetched individual item data for better title quality
-  for (const loc of locList.filter(i => i.slug)) {
-    for (const svc of svcList.filter(i => i.slug)) {
+  for (const loc of locList) {
+    for (const svc of svcList) {
       const key = `/locations/${loc.slug}/${svc.slug}`
       if (!map.has(key)) {
         const svcEntry = map.get(`/services/${svc.slug}`)
         const locEntry = map.get(`/locations/${loc.slug}`)
-        // Extract just the primary name from seoTitle (strip " | Route46..." suffix)
-        const svcName = svcEntry?.seoTitle?.split('|')[0]?.trim() || svc.name || svc.slug
-        const locName = locEntry?.seoTitle?.split('|')[0]?.trim() || loc.name || loc.slug
+        const svcName  = svcEntry?.seoTitle?.split('|')[0]?.trim() || svc.name || svc.slug
+        const locName  = locEntry?.seoTitle?.split('|')[0]?.trim() || loc.name || loc.slug
         map.set(key, {
           seoTitle:       `${svcName} in ${locName} | Route46 Couriers`,
           seoDescription: null,
@@ -393,33 +450,25 @@ async function buildRouteMap() {
     }
   }
 
-  console.log(`[seo] Route map built: ${map.size} dynamic routes\n`)
+  console.log(`\n[seo] Route map complete: ${map.size} dynamic routes\n`)
   return map
 }
 
 
-// ─── Hydration data extraction (secondary fallback) ───────────────────────────
-// vite-react-ssg now injects window.__staticRouterHydrationData (double underscores).
-// (?:__)? handles both old and new forms.
+// ─── Hydration fallback ───────────────────────────────────────────────────────
 function extractHydrationData(html) {
   let parsed = null
-
   const m1 = html.match(
     /window\.(?:__)?staticRouterHydrationData\s*=\s*JSON\.parse\('((?:[^'\\]|\\.)*)'\)/s
   )
-  if (m1) {
-    try { parsed = JSON.parse(m1[1]) } catch (_) {}
-  }
+  if (m1) { try { parsed = JSON.parse(m1[1]) } catch (_) {} }
 
   if (!parsed) {
     const m2 = html.match(
       /window\.(?:__)?staticRouterHydrationData\s*=\s*JSON\.parse\("((?:[^"\\]|\\.)*)"\)/s
     )
-    if (m2) {
-      try { parsed = JSON.parse(m2[1].replace(/\\"/g, '"')) } catch (_) {}
-    }
+    if (m2) { try { parsed = JSON.parse(m2[1].replace(/\\"/g, '"')) } catch (_) {} }
   }
-
   return parsed
 }
 
@@ -433,44 +482,31 @@ function findPageSeoData(obj, depth = 0) {
   return null
 }
 
-
-// ─── Extract existing <title> / <meta description> as final fallback ──────────
-// Keeps static routes (/, /about, /contact …) fully synced even without API data.
 function extractExistingMeta(html) {
   const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-  const title  = titleM ? titleM[1].trim() : null
-
-  const descM =
+  const descM  =
     html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["'][^>]*>/i) ||
     html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["'][^>]*>/i)
-  const desc = descM ? descM[1].trim() : null
-
-  return { title, desc }
+  return {
+    title: titleM ? titleM[1].trim() : null,
+    desc:  descM  ? descM[1].trim()  : null,
+  }
 }
 
-
-// ─── Extract hero image ───────────────────────────────────────────────────────
 function extractHeroImage(html) {
   const m =
-    html.match(
-      /<img[^>]+src=["'](https:\/\/[^"']+\.(?:webp|jpg|jpeg|png))["'][^>]*class=["'][^"']*(?:absolute|object-cover)[^"']*["']/i
-    ) ||
-    html.match(
-      /<img[^>]+class=["'][^"']*(?:absolute|object-cover)[^"']*["'][^>]+src=["'](https:\/\/[^"']+\.(?:webp|jpg|jpeg|png))["']/i
-    )
+    html.match(/<img[^>]+src=["'](https:\/\/[^"']+\.(?:webp|jpg|jpeg|png))["'][^>]*class=["'][^"']*(?:absolute|object-cover)[^"']*["']/i) ||
+    html.match(/<img[^>]+class=["'][^"']*(?:absolute|object-cover)[^"']*["'][^>]+src=["'](https:\/\/[^"']+\.(?:webp|jpg|jpeg|png))["']/i)
   return m?.[1] ?? null
 }
 
 function esc(s) { return (s ?? '').replace(/"/g, '&quot;') }
 
 
-// ─── Strip ALL existing SEO tags globally ────────────────────────────────────
+// ─── Strip & rebuild ──────────────────────────────────────────────────────────
 function stripAllSeoTags(html) {
   return html
-    .replace(
-      /<!--(?:(?!-->)[\s\S])*?<(?:title|meta[^>]*(?:name|property)\s*=\s*["'](?:description|author|og:|twitter:))[^]*?-->/gi,
-      ''
-    )
+    .replace(/<!--(?:(?!-->)[\s\S])*?<(?:title|meta[^>]*(?:name|property)\s*=\s*["'](?:description|author|og:|twitter:))[^]*?-->/gi, '')
     .replace(/<title[^>]*>[^<]*<\/title>/gi, '')
     .replace(/<meta[^>]+name=["']description["'][^>]*>/gi, '')
     .replace(/<meta[^>]+name=["']robots["'][^>]*>/gi, '')
@@ -485,8 +521,6 @@ function stripAllSeoTags(html) {
     .replace(/\n{3,}/g, '\n\n')
 }
 
-
-// ─── Build the SEO block string ───────────────────────────────────────────────
 function buildSeoBlock({ seoTitle, seoDesc, canonical, ogImage, noindex }) {
   const lines = []
   if (seoTitle) lines.push(`  <title>${esc(seoTitle)}</title>`)
@@ -503,21 +537,15 @@ function buildSeoBlock({ seoTitle, seoDesc, canonical, ogImage, noindex }) {
   return lines.join('\n')
 }
 
-
-// ─── Inject SEO block right after <meta name="viewport"> ─────────────────────
-// Puts SEO tags near the top of <head>, before CSS/JS — correct position for
-// faster crawler discovery and clean source order.
 function injectSeoBlock(html, block) {
-  const viewportMatch = html.match(/<meta[^>]+name=["']viewport["'][^>]*>/i)
-  if (viewportMatch) {
-    const idx = html.indexOf(viewportMatch[0]) + viewportMatch[0].length
+  const vp = html.match(/<meta[^>]+name=["']viewport["'][^>]*>/i)
+  if (vp) {
+    const idx = html.indexOf(vp[0]) + vp[0].length
     return html.slice(0, idx) + '\n' + block + html.slice(idx)
   }
   return html.replace(/(<head[^>]*>)/i, `$1\n${block}`)
 }
 
-
-// ─── Fix stale hero image preload ─────────────────────────────────────────────
 function fixHeroPreload(html, heroImg) {
   if (!heroImg) return html
   return html.replace(
@@ -532,8 +560,8 @@ function processFile(filePath, routeMap) {
   const route = routeFrom(filePath)
   counts.total++
 
-  if (SKIP_PREFIXES.some((p) => route.startsWith(p))) {
-    console.log(`[seo] ⏭  skip       ${route}`)
+  if (SKIP_PREFIXES.some(p => route.startsWith(p))) {
+    console.log(`[seo] ⏭  skip      ${route}`)
     counts.skipped++
     return
   }
@@ -541,12 +569,11 @@ function processFile(filePath, routeMap) {
   let html     = readFileSync(filePath, 'utf-8')
   const before = html
 
-  // Priority: API individual item → hydration JSON → existing HTML tags
-  const apiData       = routeMap.get(route)
-  const hydration     = extractHydrationData(html)
-  const hydraPage     = hydration ? findPageSeoData(hydration) : null
-  // Read BEFORE stripping so the fallback can still see the original tags
-  const { title: htmlTitle, desc: htmlDesc } = extractExistingMeta(html)
+  // Priority: 1) API  2) hydration JSON  3) existing HTML tags
+  const apiData   = routeMap.get(route)
+  const hydration = extractHydrationData(html)
+  const hydraPage = hydration ? findPageSeoData(hydration) : null
+  const { title: htmlTitle, desc: htmlDesc } = extractExistingMeta(html) // read BEFORE stripping
 
   const seoTitle  = apiData?.seoTitle       || hydraPage?.seoTitle       || hydraPage?.heroTitle || htmlTitle || null
   const seoDesc   = apiData?.seoDescription || hydraPage?.seoDescription                         || htmlDesc  || null
@@ -556,55 +583,50 @@ function processFile(filePath, routeMap) {
   const ogImage   = apiData?.ogImage || hydraPage?.ogImage || heroImg || `${BASE_URL}/route46logo.png`
   const noindex   = apiData?.noindex === true || hydraPage?.noindex === true
 
-  const sourceLabel = apiData ? 'api' : hydraPage ? 'hydration' : htmlTitle ? 'html-fallback' : 'none'
+  const src = apiData ? 'api' : hydraPage ? 'hydration' : htmlTitle ? 'html-fallback' : 'none'
 
   if (!seoTitle) {
-    console.log(`[seo] ⚠️  no-data   ${route}  (no SEO data found anywhere — skipping)`)
+    console.log(`[seo] ⚠️  no-data  ${route}  (no SEO data found — skipping)`)
     counts.noData++
     return
   }
 
-  // Step 1: Strip ALL existing SEO tags (prevents duplicates from any source)
   html = stripAllSeoTags(html)
-
-  // Step 2: Build and inject clean SEO block after <meta viewport>
-  const seoBlock = buildSeoBlock({ seoTitle, seoDesc, canonical, ogImage, noindex })
-  html = injectSeoBlock(html, seoBlock)
-
-  // Step 3: Fix stale hero preload link if needed
+  html = injectSeoBlock(html, buildSeoBlock({ seoTitle, seoDesc, canonical, ogImage, noindex }))
   html = fixHeroPreload(html, heroImg)
 
-  // Write only if changed
   if (html !== before) {
     writeFileSync(filePath, html, 'utf-8')
     const hadCanonical = /<link[^>]+rel=["']canonical["'][^>]*>/i.test(before)
     if (hadCanonical) {
-      console.log(`[seo] ✏️  replaced   ${route}  [${sourceLabel}]\n          title: "${seoTitle.trim()}"`)
-      counts.replaced++
+      console.log(`[seo] ✏️  replaced  ${route}  [${src}]`)
     } else {
-      console.log(`[seo] ✅ injected   ${route}  [${sourceLabel}]\n          title: "${seoTitle.trim()}"`)
-      counts.injected++
+      console.log(`[seo] ✅ injected  ${route}  [${src}]`)
     }
+    console.log(`          title: "${seoTitle.trim()}"`)
+    console.log(`          canonical: ${canonical}`)
+    hadCanonical ? counts.replaced++ : counts.injected++
   } else {
-    console.log(`[seo] ✓  no-change  ${route}`)
+    console.log(`[seo] ✓  no-change ${route}`)
   }
 }
 
 
 // ─── Run ──────────────────────────────────────────────────────────────────────
-console.log(`[seo] Scanning: ${DIST}\n`)
+console.log(`\n[seo] Scanning: ${DIST}\n`)
 
-buildRouteMap().then((routeMap) => {
-  walk(DIST).forEach((f) => processFile(f, routeMap))
+buildRouteMap().then(routeMap => {
+  walk(DIST).forEach(f => processFile(f, routeMap))
 
-  console.log(
-    `\n[seo] Done ─── injected:${counts.injected}  replaced:${counts.replaced}  no-data:${counts.noData}  skipped:${counts.skipped}  total:${counts.total}`
-  )
+  console.log(`\n[seo] ─── injected:${counts.injected}  replaced:${counts.replaced}  no-data:${counts.noData}  skipped:${counts.skipped}  total:${counts.total}\n`)
 
-  if (counts.noData > 0) {
-    console.log(`\n[seo] TIP: ${counts.noData} route(s) had no SEO data anywhere.`)
-    console.log(`      • Static routes (/, /about, /contact …) fall back to the existing <title>/<meta description> in the HTML.`)
-    console.log(`      • If a static route shows no-data, ensure its HTML has a <title> tag.`)
-    console.log(`      • VITE_API_URL is currently: ${API_URL || '(not set)'}`)
+  if (!API_URL) {
+    console.log('[seo] ACTION REQUIRED: Set VITE_API_URL in your .env file:')
+    console.log('[seo] VITE_API_URL=https://europe-west2-xxx.cloudfunctions.net/api')
+    console.log('[seo] This is required for dynamic route SEO (services/sectors/locations/blog).\n')
+  } else if (counts.noData > 0) {
+    console.log(`[seo] TIP: ${counts.noData} route(s) had no SEO data.`)
+    console.log(`[seo] Verify your API base URL is correct: ${API_URL}`)
+    console.log(`[seo] Test with: curl ${API_URL}/services\n`)
   }
 })
