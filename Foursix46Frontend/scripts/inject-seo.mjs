@@ -268,6 +268,9 @@ function routeFrom(file) {
 
 
 // ─── API route map ────────────────────────────────────────────────────────────
+// Primary SEO data source — fetches the same API endpoints used by vite.config.ts.
+// This is reliable even when hydration loaderData is null (all-null is normal for
+// static routes; dynamic CMS routes also have null loaderData in SSG output).
 async function buildRouteMap() {
   const map = new Map()
 
@@ -321,7 +324,7 @@ async function buildRouteMap() {
   addItems(locs, '/locations')
   addItems(blgs, '/blog')
 
-  // location × service combos
+  // location × service combos — synthesise title when no dedicated data exists
   for (const loc of locs) {
     for (const svc of svcs) {
       const key = `/locations/${loc.slug}/${svc.slug}`
@@ -342,13 +345,13 @@ async function buildRouteMap() {
 }
 
 
-// ─── Hydration data extraction ────────────────────────────────────────────────
-// FIX: vite-react-ssg now uses window.__staticRouterHydrationData (double
-// underscores). (?:__)?  makes the prefix optional so both forms are matched.
+// ─── Hydration data extraction (secondary fallback) ───────────────────────────
+// FIX: vite-react-ssg now injects window.__staticRouterHydrationData (double
+// underscores). (?:__)? makes the prefix optional so both old and new forms match.
 function extractHydrationData(html) {
   let parsed = null
 
-  // Pattern 1: single-quoted
+  // Pattern 1: single-quoted → JSON.parse('...')
   const m1 = html.match(
     /window\.(?:__)?staticRouterHydrationData\s*=\s*JSON\.parse\('((?:[^'\\]|\\.)*)'\)/s
   )
@@ -356,7 +359,7 @@ function extractHydrationData(html) {
     try { parsed = JSON.parse(m1[1]) } catch (_) {}
   }
 
-  // Pattern 2: double-quoted (what vite-react-ssg currently injects)
+  // Pattern 2: double-quoted → JSON.parse("...") — current vite-react-ssg format
   if (!parsed) {
     const m2 = html.match(
       /window\.(?:__)?staticRouterHydrationData\s*=\s*JSON\.parse\("((?:[^"\\]|\\.)*)"\)/s
@@ -369,8 +372,6 @@ function extractHydrationData(html) {
   return parsed
 }
 
-
-// Recursively find the first object with seoTitle + seoDescription
 function findPageSeoData(obj, depth = 0) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj) || depth > 8) return null
   if ((obj.seoTitle || obj.heroTitle) && obj.seoDescription) return obj
@@ -382,18 +383,13 @@ function findPageSeoData(obj, depth = 0) {
 }
 
 
-// ─── FIX: extract existing <title> and <meta name="description"> from HTML ───
-// Used as final fallback for static routes (/, /about, /contact, /privacy …)
-// so their OG and Twitter tags are always synced — even when no API data exists.
-// This also fixes the truncated og:description ("...") that comes from the
-// index.html template fallback block: the full description is always in the
-// <meta name="description"> tag, so we read that and use it everywhere.
+// ─── Extract existing <title> / <meta description> as final fallback ──────────
+// Ensures static routes (/, /about, /contact …) always get their OG/Twitter
+// tags synced from the real <title> and <meta name="description"> in the HTML.
 function extractExistingMeta(html) {
-  // <title>…</title>
   const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/i)
   const title  = titleM ? titleM[1].trim() : null
 
-  // <meta name="description" content="…"> — attribute order may vary
   const descM =
     html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["'][^>]*>/i) ||
     html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["'][^>]*>/i)
@@ -403,7 +399,7 @@ function extractExistingMeta(html) {
 }
 
 
-// Grab the first absolute-URL hero image in the rendered body
+// ─── Extract hero image ───────────────────────────────────────────────────────
 function extractHeroImage(html) {
   const m =
     html.match(
@@ -415,26 +411,78 @@ function extractHeroImage(html) {
   return m?.[1] ?? null
 }
 
+function esc(s) { return (s ?? '').replace(/"/g, '&quot;') }
 
-// Strip Helmet comment-wrapped SEO blocks
-function stripCommentedSeoBlocks(html) {
+
+// ─── Strip ALL existing SEO tags globally ────────────────────────────────────
+// FIX: removes every occurrence of each tag anywhere in the document, including
+// Helmet comment-wrapped blocks, template fallback blocks, and duplicate tags.
+// A single clean block is then inserted in the correct position.
+function stripAllSeoTags(html) {
+  return html
+    // Helmet comment-wrapped blocks
+    .replace(
+      /<!--(?:(?!-->)[\s\S])*?<(?:title|meta[^>]*(?:name|property)\s*=\s*["'](?:description|author|og:|twitter:))[^]*?-->/gi,
+      ''
+    )
+    // Individual tags — all occurrences
+    .replace(/<title[^>]*>[^<]*<\/title>/gi, '')
+    .replace(/<meta[^>]+name=["']description["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+name=["']robots["'][^>]*>/gi, '')
+    .replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+property=["']og:title["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+property=["']og:description["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+property=["']og:url["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+property=["']og:image["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+name=["']twitter:title["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+name=["']twitter:description["'][^>]*>/gi, '')
+    .replace(/<meta[^>]+name=["']twitter:image["'][^>]*>/gi, '')
+    // Clean up blank lines left behind (collapse 3+ newlines → 2)
+    .replace(/\n{3,}/g, '\n\n')
+}
+
+
+// ─── Build the SEO block string ───────────────────────────────────────────────
+function buildSeoBlock({ seoTitle, seoDesc, canonical, ogImage, noindex }) {
+  const lines = []
+  if (seoTitle) lines.push(`  <title>${esc(seoTitle)}</title>`)
+  if (seoDesc)  lines.push(`  <meta name="description" content="${esc(seoDesc)}">`)
+  lines.push(`  <meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index, follow'}">`)
+  lines.push(`  <link rel="canonical" href="${canonical}">`)
+  if (seoTitle) lines.push(`  <meta property="og:title" content="${esc(seoTitle)}">`)
+  if (seoDesc)  lines.push(`  <meta property="og:description" content="${esc(seoDesc)}">`)
+  lines.push(`  <meta property="og:url" content="${canonical}">`)
+  lines.push(`  <meta property="og:image" content="${ogImage}">`)
+  if (seoTitle) lines.push(`  <meta name="twitter:title" content="${esc(seoTitle)}">`)
+  if (seoDesc)  lines.push(`  <meta name="twitter:description" content="${esc(seoDesc)}">`)
+  lines.push(`  <meta name="twitter:image" content="${ogImage}">`)
+  return lines.join('\n')
+}
+
+
+// ─── Inject SEO block right after <meta name="viewport"> ─────────────────────
+// FIX: previous versions appended tags just before </head> — after CSS & JS.
+// Inserting after viewport puts all SEO tags near the top of <head>, which is
+// the correct position (title/canonical before stylesheets for faster discovery).
+function injectSeoBlock(html, block) {
+  const viewportMatch = html.match(/<meta[^>]+name=["']viewport["'][^>]*>/i)
+  if (viewportMatch) {
+    const idx = html.indexOf(viewportMatch[0]) + viewportMatch[0].length
+    return html.slice(0, idx) + '\n' + block + html.slice(idx)
+  }
+  // Fallback: insert just inside <head> opening
+  return html.replace(/(<head[^>]*>)/i, `$1\n${block}`)
+}
+
+
+// ─── Fix stale hero preload ───────────────────────────────────────────────────
+function fixHeroPreload(html, heroImg) {
+  if (!heroImg) return html
   return html.replace(
-    /<!--(?:(?!-->)[\s\S])*?<(?:title|meta[^>]*(?:name|property)\s*=\s*["'](?:description|author|og:|twitter:))[^]*?-->/gi,
-    ''
+    /<link[^>]+rel=["']preload["'][^>]+as=["']image["'][^>]*>/i,
+    `<link rel="preload" as="image" href="${heroImg}" fetchpriority="high">`
   )
 }
-
-
-// ─── upsertTag ────────────────────────────────────────────────────────────────
-// FIX: removes ALL matching tags globally (not just the first) before inserting
-// one clean copy before </head>. Prevents stale duplicate tags.
-function upsertTag(html, pattern, tag) {
-  const globalPattern = new RegExp(pattern.source, 'gi')
-  const stripped = html.replace(globalPattern, '')
-  return stripped.replace('</head>', `  ${tag}\n</head>`)
-}
-
-function esc(s) { return (s ?? '').replace(/"/g, '&quot;') }
 
 
 // ─── Core processor ───────────────────────────────────────────────────────────
@@ -452,12 +500,10 @@ function processFile(filePath, routeMap) {
   const before = html
 
   // ── Resolve SEO data: API → hydration → existing HTML ─────────────────
-  const apiData        = routeMap.get(route)
-  const hydration      = extractHydrationData(html)
-  const hydraPage      = hydration ? findPageSeoData(hydration) : null
-  // FIX: always read the existing <title>/<meta description> as final fallback.
-  // This ensures static pages (/, /about etc.) keep their OG tags in sync with
-  // the real <title> and fixes truncated og:description in the template block.
+  const apiData       = routeMap.get(route)
+  const hydration     = extractHydrationData(html)
+  const hydraPage     = hydration ? findPageSeoData(hydration) : null
+  // extractExistingMeta reads BEFORE stripping, so the original tags are still present
   const { title: htmlTitle, desc: htmlDesc } = extractExistingMeta(html)
 
   const seoTitle  = apiData?.seoTitle       || hydraPage?.seoTitle       || hydraPage?.heroTitle || htmlTitle || null
@@ -471,98 +517,30 @@ function processFile(filePath, routeMap) {
   const sourceLabel = apiData ? 'api' : hydraPage ? 'hydration' : htmlTitle ? 'html-fallback' : 'none'
 
   if (!seoTitle) {
-    console.log(`[seo] ⚠️  no-data   ${route}  (no seoTitle anywhere — title unchanged)`)
+    console.log(`[seo] ⚠️  no-data   ${route}  (no seoTitle anywhere — skipping SEO injection)`)
     counts.noData++
+    return
   }
 
-  // ── Step 1: Strip commented-out Helmet SEO blocks ─────────────────────
-  html = stripCommentedSeoBlocks(html)
+  // ── Step 1: Strip ALL existing SEO tags ───────────────────────────────
+  html = stripAllSeoTags(html)
 
-  // ── Step 2: Title — strip ALL existing, insert one ────────────────────
-  if (seoTitle) {
-    html = html.replace(/<title[^>]*>[^<]*<\/title>/gi, '')
-    html = html.replace('</head>', `  <title>${esc(seoTitle)}</title>\n</head>`)
-  }
+  // ── Step 2: Build and inject the clean SEO block after <meta viewport> ─
+  const seoBlock = buildSeoBlock({ seoTitle, seoDesc, canonical, ogImage, noindex })
+  html = injectSeoBlock(html, seoBlock)
 
-  // ── Step 3: Meta description ──────────────────────────────────────────
-  if (seoDesc) {
-    html = upsertTag(html,
-      /<meta[^>]+name=["']description["'][^>]*>/i,
-      `<meta name="description" content="${esc(seoDesc)}">`
-    )
-  }
-
-  // ── Step 4: Robots ────────────────────────────────────────────────────
-  html = upsertTag(html,
-    /<meta[^>]+name=["']robots["'][^>]*>/i,
-    noindex
-      ? `<meta name="robots" content="noindex,nofollow">`
-      : `<meta name="robots" content="index, follow">`
-  )
-
-  // ── Step 5: Canonical ─────────────────────────────────────────────────
-  html = upsertTag(html,
-    /<link[^>]+rel=["']canonical["'][^>]*>/i,
-    `<link rel="canonical" href="${canonical}">`
-  )
-
-  // ── Step 6: Open Graph ────────────────────────────────────────────────
-  if (seoTitle) {
-    html = upsertTag(html,
-      /<meta[^>]+property=["']og:title["'][^>]*>/i,
-      `<meta property="og:title" content="${esc(seoTitle)}">`
-    )
-  }
-  if (seoDesc) {
-    html = upsertTag(html,
-      /<meta[^>]+property=["']og:description["'][^>]*>/i,
-      `<meta property="og:description" content="${esc(seoDesc)}">`
-    )
-  }
-  html = upsertTag(html,
-    /<meta[^>]+property=["']og:url["'][^>]*>/i,
-    `<meta property="og:url" content="${canonical}">`
-  )
-  html = upsertTag(html,
-    /<meta[^>]+property=["']og:image["'][^>]*>/i,
-    `<meta property="og:image" content="${ogImage}">`
-  )
-
-  // ── Step 7: Twitter Card ──────────────────────────────────────────────
-  if (seoTitle) {
-    html = upsertTag(html,
-      /<meta[^>]+name=["']twitter:title["'][^>]*>/i,
-      `<meta name="twitter:title" content="${esc(seoTitle)}">`
-    )
-  }
-  if (seoDesc) {
-    html = upsertTag(html,
-      /<meta[^>]+name=["']twitter:description["'][^>]*>/i,
-      `<meta name="twitter:description" content="${esc(seoDesc)}">`
-    )
-  }
-  html = upsertTag(html,
-    /<meta[^>]+name=["']twitter:image["'][^>]*>/i,
-    `<meta name="twitter:image" content="${ogImage}">`
-  )
-
-  // ── Step 8: Fix stale preload → real hero image ───────────────────────
-  if (heroImg) {
-    html = html.replace(
-      /<link[^>]+rel=["']preload["'][^>]+as=["']image["'][^>]*>/i,
-      `<link rel="preload" as="image" href="${heroImg}" fetchpriority="high">`
-    )
-  }
+  // ── Step 3: Fix stale hero image preload ──────────────────────────────
+  html = fixHeroPreload(html, heroImg)
 
   // ── Write ─────────────────────────────────────────────────────────────
   if (html !== before) {
     writeFileSync(filePath, html, 'utf-8')
     const hadCanonical = /<link[^>]+rel=["']canonical["'][^>]*>/i.test(before)
     if (hadCanonical) {
-      console.log(`[seo] ✏️  replaced   ${route}  [${sourceLabel}]${seoTitle ? `\n          title: "${seoTitle.trim()}"` : ''}`)
+      console.log(`[seo] ✏️  replaced   ${route}  [${sourceLabel}]\n          title: "${seoTitle.trim()}"`)
       counts.replaced++
     } else {
-      console.log(`[seo] ✅ injected   ${route}  [${sourceLabel}]${seoTitle ? `\n          title: "${seoTitle.trim()}"` : ''}`)
+      console.log(`[seo] ✅ injected   ${route}  [${sourceLabel}]\n          title: "${seoTitle.trim()}"`)
       counts.injected++
     }
   } else {
@@ -582,9 +560,9 @@ buildRouteMap().then((routeMap) => {
   )
 
   if (counts.noData > 0) {
-    console.log(`\n[seo] TIP: ${counts.noData} route(s) had no SEO data.`)
-    console.log(`      • This should now be 0 — every page falls back to its own <title>/<meta description>.`)
-    console.log(`      • If still > 0, the HTML file has no <title> tag at all.`)
+    console.log(`\n[seo] TIP: ${counts.noData} route(s) had no SEO data at all (not even a <title> in HTML).`)
+    console.log(`      • Check that index.html has a default <title> tag for static routes.`)
+    console.log(`      • For CMS routes, ensure the API returns seoTitle + seoDescription.`)
     console.log(`      • VITE_API_URL is currently: ${API_URL || '(not set)'}`)
   }
 })
